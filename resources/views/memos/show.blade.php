@@ -1,0 +1,29 @@
+@extends('layouts.app')
+@section('title', 'View Memo')
+@section('content')
+<div style="max-width:1100px;margin:24px auto">
+    @section('header-title')
+{{ $memo->memo_number }}
+@endsection
+@section('header-description')
+View, download, or print your memo.
+@endsection
+@section('header-eyebrow')
+Memo details
+@endsection
+@section('header-back')
+<a href="{{ route('memos.my') }}">&larr; Back to my memos</a>
+@endsection
+@section('header-actions')
+<a href="{{ route('memos.all') }}" class="app-header-button secondary">All memos</a>
+@if((int) $memo->created_by === (int) auth()->id() && $memo->status === 'draft')
+<a href="{{ route('memos.edit', $memo) }}" class="app-header-button secondary">Edit draft</a>
+@endif
+<a href="{{ route('memos.pdf', [$memo, 'download' => 1]) }}" class="app-header-button">Download PDF</a>
+<a href="{{ route('memos.pdf', $memo) }}" class="app-header-button secondary" target="_blank" rel="noopener">Open PDF / Print</a>
+@endsection
+
+    <p>Use the PDF toolbar to print or save this memo.</p>
+    <iframe src="{{ route('memos.pdf', $memo) }}" title="PDF of {{ $memo->memo_number }}" style="width:100%;height:80vh;border:1px solid #d0d5dd;border-radius:8px;background:#eee"></iframe>
+</div>
+@endsection
