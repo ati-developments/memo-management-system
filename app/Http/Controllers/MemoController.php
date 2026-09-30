@@ -104,6 +104,8 @@ class MemoController extends Controller
             'tables.*.rows' => ['array'],
             'tables.*.rows.*' => ['array'],
             'tables.*.rows.*.*' => ['nullable', 'string', 'max:10000'],
+            'attachments' => ['nullable', 'array', 'max:10'],
+            'attachments.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg'],
         ];
         foreach ($template->fields as $field) {
             if (!array_key_exists($field->field_name, $rules)) {
@@ -420,6 +422,20 @@ class MemoController extends Controller
 
             return $memo;
         });
+
+        foreach ($request->file('attachments', []) as $file) {
+            $path = $file->store('memo-attachments/' . $memo->id, 'local');
+            if (!$path) {
+                throw new \RuntimeException('An attachment could not be saved. Please try again.');
+            }
+
+            $memo->attachments()->create([
+                'original_name' => $file->getClientOriginalName(),
+                'storage_path' => $path,
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+            ]);
+        }
 
 
         /*

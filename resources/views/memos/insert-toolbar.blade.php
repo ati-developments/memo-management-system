@@ -4,6 +4,7 @@
         <button type="button" class="btn btn-secondary" data-insert="field">+ Field</button>
         <button type="button" class="btn btn-secondary" data-insert="table">+ Table</button>
         <button type="button" class="btn btn-secondary" data-add-text-at="after_subject">+ Text</button>
+        <button type="button" class="btn btn-secondary" data-add-attachments>+ Attachments</button>
         <button type="button" class="btn btn-secondary" data-memo-format="bold" aria-label="Bold" title="Select words in a text block, then apply bold" disabled><strong>B</strong></button>
         <button type="button" class="btn btn-secondary" data-memo-format="italic" aria-label="Italic" title="Select words in a text block, then apply italic" disabled><em>I</em></button>
         <button type="button" class="btn btn-secondary" data-memo-format="underline" aria-label="Underline" title="Select words in a text block, then apply underline" disabled><u>U</u></button>
@@ -48,6 +49,20 @@
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const attachmentInput = document.getElementById('memo-attachments');
+    const attachmentList = document.getElementById('memo-attachment-list');
+    document.querySelector('[data-add-attachments]')?.addEventListener('click', () => attachmentInput?.click());
+    attachmentInput?.addEventListener('change', () => {
+        if (!attachmentList) return;
+        attachmentList.replaceChildren();
+        [...attachmentInput.files].forEach(file => {
+            const item = document.createElement('li');
+            item.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            attachmentList.append(item);
+        });
+        const status = document.getElementById('memo-insert-status');
+        if (status) status.textContent = attachmentInput.files.length ? `${attachmentInput.files.length} attachment(s) selected.` : 'No attachments selected.';
+    });
     const dialog = document.getElementById('memo-insert-dialog');
     const form = document.getElementById('memo-insert-form');
     const columns = form.querySelector('[data-column-list]');

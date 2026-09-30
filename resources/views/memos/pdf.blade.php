@@ -10,5 +10,10 @@
 </head>
 <body class="memo-document">
 @include('memos.document')
+@foreach($memo->attachments as $attachment)
+    <div style="page-break-before:always">
+        @include('memos.attachment-page')
+    </div>
+@endforeach
 </body>
 </html>

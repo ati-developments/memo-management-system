@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Memo;
+use App\Models\MemoAttachment;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
@@ -13,12 +14,21 @@ class MemoDocumentController extends Controller
     // The authenticated organization-wide register already exposes all memos.
     public function show(Memo $memo)
     {
+        $memo->load('attachments');
         return view('memos.show', compact('memo'));
+    }
+
+    public function downloadAttachment(Memo $memo, MemoAttachment $attachment)
+    {
+        abort_unless((int) $attachment->memo_id === (int) $memo->id, 404);
+        abort_unless(Storage::disk('local')->exists($attachment->storage_path), 404);
+
+        return Storage::disk('local')->download($attachment->storage_path, $attachment->original_name);
     }
 
     public function pdf(Request $request, Memo $memo)
     {
-        $memo->load(['department', 'creator', 'fieldValues.templateField', 'tableRows.templateTable.columns', 'approvals.approver', 'approvals.approvalStep']);
+        $memo->load(['department', 'creator', 'fieldValues.templateField', 'tableRows.templateTable.columns', 'approvals.approver', 'approvals.approvalStep', 'attachments']);
         $values = $memo->fieldValues->pluck('field_value', 'field_name');
         $approvals = $memo->approvals->sortBy('chain_order');
         $signatureImages = [];
@@ -59,7 +69,7 @@ class MemoDocumentController extends Controller
     public function edit(Memo $memo)
     {
         $this->authorizeEdit($memo);
-        $memo->load(['template.fields', 'template.tables.columns', 'fieldValues', 'tableRows']);
+        $memo->load(['template.fields', 'template.tables.columns', 'fieldValues', 'tableRows', 'attachments']);
         abort_unless($memo->template, 422, 'This memo no longer has a template.');
         $values = $memo->fieldValues->pluck('field_value', 'field_name');
 

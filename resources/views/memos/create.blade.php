@@ -53,6 +53,7 @@ Memo builder
                 <form
                     id="memoForm"
                     method="POST"
+                    enctype="multipart/form-data"
                     action="{{ route('memos.store') }}"
                 >
 
@@ -64,6 +65,10 @@ Memo builder
                         name="template_id"
                         value="{{ $template->id }}"
                     >
+
+                    <input id="memo-attachments" type="file" name="attachments[]" multiple hidden
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg">
+                    <ul id="memo-attachment-list" aria-label="Selected attachments"></ul>
 
 
                     <div class="form-section">

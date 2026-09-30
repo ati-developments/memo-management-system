@@ -121,6 +121,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/memos/{memo}', [\App\Http\Controllers\MemoDocumentController::class, 'show'])->name('memos.show');
     Route::get('/memos/{memo}/pdf', [\App\Http\Controllers\MemoDocumentController::class, 'pdf'])->name('memos.pdf');
+    Route::get('/memos/{memo}/attachments/{attachment}', [\App\Http\Controllers\MemoDocumentController::class, 'downloadAttachment'])->name('memos.attachments.download');
     Route::get('/memos/{memo}/edit', [\App\Http\Controllers\MemoDocumentController::class, 'edit'])->name('memos.edit');
     Route::put('/memos/{memo}', [\App\Http\Controllers\MemoDocumentController::class, 'update'])->name('memos.update');
 });

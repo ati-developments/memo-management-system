@@ -27,9 +27,15 @@ Memo builder
 <a href="{{ route('memos.my') }}">&larr; Back to my memos</a>
 @endsection
     @if($errors->any())<div role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    <form method="POST" action="{{ route('memos.update', $memo) }}">
+    <form method="POST" enctype="multipart/form-data" action="{{ route('memos.update', $memo) }}">
         @csrf
         @method('PUT')
+        <label for="memo-attachments">Add attachments (up to 10 files, 10 MB each)</label>
+        <input id="memo-attachments" type="file" name="attachments[]" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg">
+        @if($memo->attachments->isNotEmpty())
+            <p>Current attachments:</p>
+            <ul>@foreach($memo->attachments as $attachment)<li><a href="{{ route('memos.attachments.download', [$memo, $attachment]) }}">{{ $attachment->original_name }}</a></li>@endforeach</ul>
+        @endif
         @if($memo->template->allow_optional_text || !empty($memo->text_blocks))
             @include('memos.text-block-editor')
         @endif

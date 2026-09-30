@@ -20,6 +20,15 @@
     .memo-document table { table-layout: fixed; }
     .memo-document td, .memo-document th { overflow-wrap: anywhere; }
     .memo-document .brand img { max-width: 100%; height: auto; }
+    .document-navigation { display: flex; align-items: center; justify-content: center; gap: 16px; width: 90%; margin-bottom: 12px; }
+    .document-navigation button { padding: 7px 14px; border: 1px solid #d0d5dd; border-radius: 6px; background: #fff; color: #344158; cursor: pointer; }
+    .document-navigation button:hover:not(:disabled) { background: #eef0f4; }
+    .document-navigation button:focus-visible { outline: 2px solid #2856e8; outline-offset: 3px; }
+    .document-navigation button:disabled { background: #f3f4f6; color: #737d8c; cursor: default; }
+    html[data-theme=dark] .document-navigation button { background: #22314a; color: #e0e8f5; border-color: #40516c; }
+    html[data-theme=dark] .document-navigation button:hover:not(:disabled) { background: #304563; }
+    html[data-theme=dark] .document-navigation button:disabled { background: #172238; color: #8f9fb9; border-color: #30405a; }
+    [data-document-page][hidden], .document-navigation[hidden] { display: none; }
     @media (max-width: 600px) { .memo-document { min-height: 0; padding: 20px 12px; } }
     .memo-empty { padding: 20px 0; color: #7a8392; font-size: 13px; text-align: center; }
     .review-sidebar { display: grid; gap: 15px; }
@@ -106,9 +115,21 @@ Memo approvals
                 <a href="{{ route('memos.pdf', $memo) }}" class="print-button" target="_blank" rel="noopener">Print / Save PDF</a>
             </div>
 
-            <article class="memo-document" aria-label="Memo document">
+            @if($memo->attachments->isNotEmpty())
+                <nav class="document-navigation" aria-label="Document pages" hidden data-document-navigation>
+                    <button type="button" data-previous-page aria-label="Previous page" disabled>&larr;</button>
+                    <span data-page-counter aria-live="polite">Page 1 of {{ $memo->attachments->count() + 1 }}</span>
+                    <button type="button" data-next-page aria-label="Next page">&rarr;</button>
+                </nav>
+            @endif
+            <article class="memo-document" aria-label="Memo document" data-document-page>
                 @include('memos.document')
             </article>
+            @foreach($memo->attachments as $attachment)
+                <article class="memo-document" aria-label="Attachment page {{ $loop->iteration }}" data-document-page>
+                    @include('memos.attachment-page')
+                </article>
+            @endforeach
         </main>
 
         @php($approvalChain = $memo->approvals->sortBy(fn ($item) => $item->chain_order)->values())
@@ -186,6 +207,25 @@ Memo approvals
 
 @section('scripts')
 <script>
+    (() => {
+        const navigation = document.querySelector('[data-document-navigation]');
+        if (!navigation) return;
+        const pages = [...document.querySelectorAll('[data-document-page]')];
+        const previous = navigation.querySelector('[data-previous-page]');
+        const next = navigation.querySelector('[data-next-page]');
+        const counter = navigation.querySelector('[data-page-counter]');
+        let current = 0;
+        const render = () => {
+            pages.forEach((page, index) => { page.hidden = index !== current; });
+            previous.disabled = current === 0;
+            next.disabled = current === pages.length - 1;
+            counter.textContent = `Page ${current + 1} of ${pages.length}`;
+        };
+        previous.addEventListener('click', () => { if (current > 0) { current--; render(); } });
+        next.addEventListener('click', () => { if (current < pages.length - 1) { current++; render(); } });
+        navigation.hidden = false;
+        render();
+    })();
     (() => {
         const form = document.querySelector('[data-approve-form]');
         const dialog = document.getElementById('approvalConfirmationDialog');

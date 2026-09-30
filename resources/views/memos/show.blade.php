@@ -25,5 +25,15 @@ Memo details
 
     <p>Use the PDF toolbar to print or save this memo.</p>
     <iframe src="{{ route('memos.pdf', $memo) }}" title="PDF of {{ $memo->memo_number }}" style="width:100%;height:80vh;border:1px solid #d0d5dd;border-radius:8px;background:#eee"></iframe>
+    @if($memo->attachments->isNotEmpty())
+        <section aria-labelledby="memo-attachments-title" style="margin-top:24px;padding:20px;background:#fff;border:1px solid #d0d5dd;border-radius:8px">
+            <h2 id="memo-attachments-title">Attachments</h2>
+            <ul>
+                @foreach($memo->attachments as $attachment)
+                    <li><a href="{{ route('memos.attachments.download', [$memo, $attachment]) }}">{{ $attachment->original_name }}</a> <small>({{ number_format($attachment->size / 1024, 1) }} KB)</small></li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
 </div>
 @endsection

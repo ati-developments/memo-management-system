@@ -10,6 +10,44 @@ class MemoDocumentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_attachments_appear_in_the_pdf_and_approval_document(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $image = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=');
+        \Illuminate\Support\Facades\Storage::disk('local')->put('memo-attachments/test.png', $image);
+        $memo = $this->draft();
+        $attachment = $memo->attachments()->create([
+            'original_name' => 'Supporting screenshot.png',
+            'storage_path' => 'memo-attachments/test.png',
+            'mime_type' => 'image/png',
+            'size' => 2048,
+        ]);
+        $url = route('memos.attachments.download', [$memo, $attachment]);
+        $html = view('memos.pdf', [
+            'memo' => $memo->fresh(), 'values' => collect(),
+            'approvals' => collect(), 'signatureImages' => [],
+        ])->render();
+        $this->assertStringNotContainsString('Supporting screenshot.png', $html);
+        $this->assertStringNotContainsString(' KB)', $html);
+        $this->assertStringNotContainsString('&#x20;', $html);
+        $this->assertStringContainsString('page-break-before:always', $html);
+        $this->assertStringContainsString($url, $html);
+        $this->assertStringContainsString('data:image/png;base64,'.base64_encode($image), $html);
+        $response = $this->get(route('memos.pdf', $memo))->assertOk();
+        $this->assertStringContainsString($url, $response->getContent());
+        $this->assertMatchesRegularExpression('/\/Type\s*\/Pages\b[^>]*\/Count\s+2\b/s', $response->getContent());
+        $approval = $memo->approvals()->create([
+            'approver_id' => $memo->created_by, 'approval_role' => 'prepared', 'action' => 'pending',
+        ]);
+        $this->get(route('approvals.review', $approval))->assertOk()
+            ->assertDontSee('Supporting screenshot.png')->assertSee($url)
+            ->assertSee('Page 1 of 2')->assertSee('aria-label="Next page"', false)
+            ->assertSee('aria-label="Previous page"', false)
+            ->assertSee('data:image/png;base64,'.base64_encode($image), false);
+        \Illuminate\Support\Facades\Storage::disk('local')->delete('memo-attachments/test.png');
+        $this->assertNull($attachment->imagePreview());
+    }
+
     public function test_text_formatting_survives_save_and_edit_and_removes_unsafe_html(): void
     {
         $memo = $this->draft();

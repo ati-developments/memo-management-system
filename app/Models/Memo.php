@@ -59,6 +59,11 @@ class Memo extends Model
         return $this->hasMany(MemoApproval::class);
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(MemoAttachment::class);
+    }
+
     public function documentTables(): \Illuminate\Support\Collection
     {
         $groups = $this->tableRows->groupBy('template_table_id');
