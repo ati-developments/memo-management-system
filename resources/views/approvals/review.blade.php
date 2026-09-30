@@ -20,6 +20,7 @@
     .memo-document table { table-layout: fixed; }
     .memo-document td, .memo-document th { overflow-wrap: anywhere; }
     .memo-document .brand img { max-width: 100%; height: auto; }
+    .memo-document.attachment-document { padding: 0; min-height: 0; }
     .document-navigation { display: flex; align-items: center; justify-content: center; gap: 16px; width: 90%; margin-bottom: 12px; }
     .document-navigation button { padding: 7px 14px; border: 1px solid #d0d5dd; border-radius: 6px; background: #fff; color: #344158; cursor: pointer; }
     .document-navigation button:hover:not(:disabled) { background: #eef0f4; }
@@ -126,7 +127,7 @@ Memo approvals
                 @include('memos.document')
             </article>
             @foreach($memo->attachments as $attachment)
-                <article class="memo-document" aria-label="Attachment page {{ $loop->iteration }}" data-document-page>
+                <article class="memo-document attachment-document" aria-label="Attachment page {{ $loop->iteration }}" data-document-page>
                     @include('memos.attachment-page')
                 </article>
             @endforeach

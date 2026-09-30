@@ -13,43 +13,6 @@ use Illuminate\Support\Str;
 
 class TemplateController extends Controller
 {
-    public function insert(Request $request, MemoTemplate $template)
-    {
-        $data = $request->validate([
-            'kind' => ['required', Rule::in(['field', 'table'])],
-            'label' => ['required', 'string', 'max:255'],
-            'type' => ['required_if:kind,field', Rule::in(['text', 'textarea', 'number', 'date'])],
-            'columns' => ['required_if:kind,table', 'array', 'min:1', 'max:20'],
-            'columns.*' => ['array:column_label,column_type'],
-            'columns.*.column_label' => ['required', 'string', 'max:255'],
-            'columns.*.column_type' => ['required', Rule::in(['text', 'textarea', 'number', 'decimal', 'date'])],
-        ]);
-
-        $item = DB::transaction(function () use ($template, $data) {
-            MemoTemplate::whereKey($template->id)->lockForUpdate()->firstOrFail();
-            if ($data['kind'] === 'field') {
-                return $template->fields()->create([
-                    'field_name' => 'custom_'.Str::uuid()->getHex(),
-                    'field_label' => $data['label'], 'field_type' => $data['type'],
-                    'is_required' => false, 'is_active' => true,
-                    'field_order' => ($template->fields()->max('field_order') ?? 0) + 1,
-                ]);
-            }
-            $table = $template->tables()->create([
-                'table_name' => 'custom_'.Str::uuid()->getHex(), 'table_label' => $data['label'],
-                'is_active' => true, 'table_order' => ($template->tables()->max('table_order') ?? 0) + 1,
-            ]);
-            foreach ($this->withNames($data['columns'], 'column_name', 'column_label', 'column') as $index => $column) {
-                $table->columns()->create($column + [
-                    'is_required' => false, 'is_active' => true, 'is_calculated' => false, 'column_order' => $index + 1,
-                ]);
-            }
-            return $table->load('columns');
-        });
-
-        return response()->json(['kind' => $data['kind'], 'item' => $item], 201);
-    }
-
     public function index()
     {
         $departments = Department::with([

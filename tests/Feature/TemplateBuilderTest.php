@@ -15,13 +15,13 @@ class TemplateBuilderTest extends TestCase
         $department = Department::create(['department_name' => 'IT', 'department_code' => 'IT', 'status' => true]);
         $this->actingAs(User::factory()->create(['username' => 'builder', 'department_id' => $department->id]));
         $template = MemoTemplate::create(['department_id' => $department->id, 'template_name' => 'Payment', 'template_code' => 'PAY', 'status' => true]);
-        $this->post(route('templates.fields.store', $template), ['fields' => [
+        $this->post(route('templates.fields.store', $template), ['allow_optional_text' => false, 'fields' => [
             ['field_label' => 'Bill Period', 'field_type' => 'text'],
             ['field_label' => 'Bill Period', 'field_type' => 'text'],
         ]])->assertSessionHasNoErrors();
         $this->assertSame(['bill_period', 'bill_period_2'], $template->fields()->pluck('field_name')->all());
         $field = $template->fields()->first();
-        $this->post(route('templates.fields.store', $template), ['fields' => [
+        $this->post(route('templates.fields.store', $template), ['allow_optional_text' => false, 'fields' => [
             ['field_name' => $field->field_name, 'field_label' => 'Period', 'field_type' => 'text'],
         ]])->assertSessionHasNoErrors();
         $this->assertSame($field->id, $template->fields()->first()->id);

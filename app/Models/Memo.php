@@ -19,12 +19,14 @@ class Memo extends Model
         'creation_type',
         'content',
         'text_blocks',
+        'inserted_items',
         'submitted_at',
         'completed_at',
     ];
 
     protected $casts = [
         'text_blocks' => 'array',
+        'inserted_items' => 'array',
         'submitted_at' => 'datetime',
         'completed_at' => 'datetime',
     ];

@@ -73,8 +73,6 @@ Route::middleware('auth')->group(function () {
 
 
     // Templates
-    Route::post('/templates/{template}/insert', [TemplateController::class, 'insert'])
-        ->name('templates.insert');
 
     Route::get('/templates', [TemplateController::class, 'index'])
         ->name('templates.index');

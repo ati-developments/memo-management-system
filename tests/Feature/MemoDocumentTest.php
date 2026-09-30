@@ -31,6 +31,8 @@ class MemoDocumentTest extends TestCase
         $this->assertStringNotContainsString(' KB)', $html);
         $this->assertStringNotContainsString('&#x20;', $html);
         $this->assertStringContainsString('page-break-before:always', $html);
+        $this->assertStringContainsString('@page attachment { margin: 0; }', $html);
+        $this->assertStringContainsString('display:block;width:100%;height:auto', $html);
         $this->assertStringContainsString($url, $html);
         $this->assertStringContainsString('data:image/png;base64,'.base64_encode($image), $html);
         $response = $this->get(route('memos.pdf', $memo))->assertOk();

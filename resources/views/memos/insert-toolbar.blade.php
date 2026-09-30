@@ -8,14 +8,14 @@
         <button type="button" class="btn btn-secondary" data-memo-format="bold" aria-label="Bold" title="Select words in a text block, then apply bold" disabled><strong>B</strong></button>
         <button type="button" class="btn btn-secondary" data-memo-format="italic" aria-label="Italic" title="Select words in a text block, then apply italic" disabled><em>I</em></button>
         <button type="button" class="btn btn-secondary" data-memo-format="underline" aria-label="Underline" title="Select words in a text block, then apply underline" disabled><u>U</u></button>
-        <span>Fields and tables update this template. Text is for this memo only.</span>
+        <span>Changes apply to this memo only. Use Edit Template for permanent changes.</span>
     </div>
     <p id="memo-insert-status" role="status" aria-live="polite"></p>
 </section>
 <dialog id="memo-insert-dialog" aria-labelledby="memo-insert-title">
     <form id="memo-insert-form">
         <h2 id="memo-insert-title">Insert field</h2>
-        <p>The new item will be available in this memo and future memos using this template.</p>
+        <p>The new item will be saved with this memo only.</p>
         <label>Name <input class="form-control" name="label" required maxlength="255"></label>
         <label data-field-type>Field type <select class="form-control" name="type">
             <option value="text">Text</option><option value="textarea">Paragraph</option>
@@ -99,25 +99,44 @@ document.addEventListener('DOMContentLoaded', () => {
     form.querySelector('[data-add-column]').onclick = addColumn;
     form.querySelector('[data-cancel-insert]').onclick = () => { if (!busy) dialog.close(); };
     dialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
-    form.addEventListener('submit', async event => {
+    let itemIndex = 0;
+    const insertItem = payload => {
+        const index = itemIndex++;
+        const prefix = `inserted_items[${index}]`;
+        const hidden = (name, value) => {
+            const input = element('input'); input.type = 'hidden'; input.name = `${prefix}[${name}]`; input.value = value;
+            document.getElementById('memoForm').append(input);
+        };
+        hidden('kind', payload.kind); hidden('label', payload.label);
+        if (payload.kind === 'field') hidden('type', payload.type);
+        const item = {id: 'local_' + index, field_name: 'local_field_' + index, field_label: payload.label, field_type: payload.type, table_label: payload.label,
+            columns: (payload.columns || []).map((column, i) => ({...column, column_name: 'column_' + i}))};
+        item.columns.forEach((column, i) => Object.entries(column).forEach(([key, value]) => hidden(`columns][${i}][${key}`, value)));
+        const result = {kind: payload.kind, item};
+        renderItem(result, prefix, payload);
+    };
+    form.addEventListener('submit', event => {
         event.preventDefault(); if (busy) return;
         const payload = {kind, label:form.elements.label.value};
         if (kind === 'field') payload.type = form.elements.type.value;
         else payload.columns = [...columns.children].map(row => ({column_label:row.querySelector('input').value, column_type:row.querySelector('select').value}));
         busy = true; submit.disabled = true; error.textContent = '';
         try {
-            const response = await fetch(@json(route('templates.insert', $template)), {
-                method:'POST', headers:{'Content-Type':'application/json', 'Accept':'application/json', 'X-CSRF-TOKEN':document.querySelector('#memoForm [name=_token]').value},
-                body:JSON.stringify(payload)
-            });
-        const result = await response.json();
-            if (!response.ok) throw new Error(Object.values(result.errors || {}).flat().join(' ') || result.message || 'Unable to insert. Please try again.');
+            if (kind === 'table' && !payload.columns.length) throw new Error('Add at least one column.');
+            insertItem(payload);
+            dialog.close();
+            document.getElementById('memo-insert-status').textContent = payload.label + ' added to this memo only.';
+        } catch (exception) {
+            error.textContent = exception.message || 'Unable to insert. Please try again.';
+        } finally { busy = false; submit.disabled = false; }
+    });
+    const renderItem = (result, prefix, payload) => {
             const item = result.item;
             if (result.kind === 'field') {
                 const group = element('div', 'form-group');
                 const label = element('label', '', item.field_label); label.htmlFor = item.field_name;
                 const input = element(item.field_type === 'textarea' ? 'textarea' : 'input', 'form-control');
-                input.id = input.name = item.field_name;
+                input.id = item.field_name; input.name = `${prefix}[value]`; input.value = payload.value || '';
                 if (item.field_type !== 'textarea') input.type = item.field_type;
                 if (item.field_type === 'number') input.step = 'any';
                 group.append(label, input); document.getElementById('inserted-memo-fields').append(group);
@@ -126,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.append(element('div', 'memo-label', item.field_label), value);
                 document.querySelector('.additional-preview-fields').append(row);
                 input.addEventListener('input', () => updatePreview(input.id));
-                input.focus();
+                updatePreview(input.id);
             } else {
                 const group = element('div', 'memo-table-form-section');
                 group.append(element('h4', 'memo-table-title', item.table_label));
@@ -135,7 +154,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.columns.forEach(column => head.append(element('th', '', column.column_label)));
                 table.createTBody().id = 'table-body-' + item.id;
                 const wrapper = element('div', 'memo-table-wrapper'); wrapper.append(table); group.append(wrapper);
-                const add = element('button', 'btn btn-secondary', '+ Add row'); add.type = 'button'; add.onclick = () => addTableRow(item.id); group.append(add);
+                const addRow = (values = {}) => {
+                    addTableRow(item.id);
+                    const row = table.tBodies[0].lastElementChild;
+                    row.querySelectorAll('input, textarea').forEach(input => {
+                        input.name = input.name.replace(`tables[${item.id}]`, prefix);
+                        input.value = values[input.dataset.columnName] || '';
+                        input.dispatchEvent(new Event('input', {bubbles: true}));
+                    });
+                };
+                const add = element('button', 'btn btn-secondary', '+ Add row'); add.type = 'button'; add.onclick = () => addRow(); group.append(add);
                 document.getElementById('inserted-memo-tables').append(group);
                 const preview = element('div', 'preview-table-section'); preview.append(element('h3', 'document-section-title', item.table_label));
                 const previewTable = element('table', 'charges-table dynamic-preview-table'); previewTable.id = 'preview-table-' + item.id;
@@ -143,13 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 previewTable.createTBody(); preview.append(previewTable);
                 document.querySelector('[data-text-position="before_recommendation"]').before(preview);
                 templateTables.push({id:item.id, columns:item.columns.map(column => ({name:column.column_name, type:column.column_type}))});
-                addTableRow(item.id);
+                const rows = Object.values(payload.rows || {});
+                (rows.length ? rows : [{}]).forEach(addRow);
             }
-            dialog.close();
-            document.getElementById('memo-insert-status').textContent = (result.kind === 'field' ? item.field_label : item.table_label) + ' added to the template. Your memo entries are preserved.';
-        } catch (exception) {
-            error.textContent = exception.message || 'Unable to insert. Please try again.';
-        } finally { busy = false; submit.disabled = false; }
-    });
+    };
+    Object.values(@json(old('inserted_items', []))).forEach(insertItem);
 });
 </script>

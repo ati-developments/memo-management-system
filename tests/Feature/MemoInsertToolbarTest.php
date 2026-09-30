@@ -17,42 +17,42 @@ class MemoInsertToolbarTest extends TestCase
         return MemoTemplate::create(['department_id' => $department->id, 'template_name' => 'Payment', 'template_code' => 'PAY', 'status' => true]);
     }
 
-    public function test_inserted_fields_and_tables_preserve_existing_items_and_save_with_memo(): void
+    public function test_insertions_are_saved_only_on_the_memo_and_survive_editing(): void
     {
         $template = $this->template();
-        $existing = $template->fields()->create(['field_name' => 'reference', 'field_label' => 'Reference', 'field_type' => 'text', 'field_order' => 1, 'is_active' => true]);
-        $field = $this->postJson(route('templates.insert', $template), ['kind' => 'field', 'label' => 'Reference', 'type' => 'text'])
-            ->assertCreated()->json('item');
-        $this->assertNotSame($existing->field_name, $field['field_name']);
-        $this->assertSame(2, $template->fields()->count());
-        $table = $this->postJson(route('templates.insert', $template), ['kind' => 'table', 'label' => 'Costs', 'columns' => [
-            ['column_label' => 'Amount', 'column_type' => 'decimal'],
-            ['column_label' => 'Amount', 'column_type' => 'text'],
-        ]])->assertCreated()->json('item');
-        $this->assertSame(['amount', 'amount_2'], array_column($table['columns'], 'column_name'));
-        $this->post(route('memos.store'), [
-            'template_id' => $template->id, 'subject' => 'Toolbar memo', 'action' => 'draft',
-            'reference' => 'Existing value', $field['field_name'] => 'New value',
-            'tables' => [$table['id'] => ['rows' => [['amount' => '12.50', 'amount_2' => 'Notes']]]],
-            'text_blocks' => [['position' => 'after_subject', 'text' => 'Memo only text']],
-        ])->assertSessionHasNoErrors();
+        $items = [
+            ['kind' => 'field', 'label' => 'One time reference', 'type' => 'text', 'value' => 'Special reference'],
+            ['kind' => 'table', 'label' => 'One time costs', 'columns' => [
+                ['column_name' => 'column_0', 'column_label' => 'Amount', 'column_type' => 'decimal'],
+            ], 'rows' => [['column_0' => '12.50']]],
+        ];
+        $payload = ['template_id' => $template->id, 'subject' => 'Memo only', 'action' => 'draft', 'inserted_items' => $items];
+        $this->post(route('memos.store'), $payload)->assertSessionHasNoErrors();
         $memo = Memo::latest('id')->firstOrFail();
-        $this->assertSame('New value', $memo->fieldValues()->where('template_field_id', $field['id'])->value('field_value'));
-        $this->assertSame('12.50', $memo->tableRows()->firstOrFail()->row_data['amount']);
-        $this->get(route('memos.create.template', $template))->assertOk()->assertSee('memo-insert-bar')->assertSee('Costs');
-    }
-
-    public function test_invalid_insertions_do_not_change_template(): void
-    {
-        $template = $this->template();
-        $this->postJson(route('templates.insert', $template), ['kind' => 'table', 'label' => 'Invalid', 'columns' => []])
-            ->assertUnprocessable()->assertJsonValidationErrors('columns');
-        $this->postJson(route('templates.insert', $template), ['kind' => 'field', 'label' => 'Invalid', 'type' => 'script'])
-            ->assertUnprocessable()->assertJsonValidationErrors('type');
+        $this->assertSame($items, $memo->inserted_items);
         $this->assertSame(0, $template->fields()->count());
         $this->assertSame(0, $template->tables()->count());
-        auth()->logout();
-        $this->postJson(route('templates.insert', $template), ['kind' => 'field', 'label' => 'Unauthorized', 'type' => 'text'])
-            ->assertUnauthorized();
+        $this->get(route('memos.create.template', $template))->assertOk()->assertDontSee('One time costs');
+        $this->get(route('memos.edit', $memo))->assertOk()->assertSee('Special reference')->assertSee('12.50');
+        $items[0]['value'] = 'Edited reference';
+        $this->put(route('memos.update', $memo), array_merge($payload, ['inserted_items' => $items]))->assertSessionHasNoErrors();
+        $this->assertSame($items, $memo->fresh()->inserted_items);
+        $html = view('memos.pdf', ['memo' => $memo->fresh(), 'values' => collect(), 'approvals' => collect(), 'signatureImages' => []])->render();
+        $this->assertStringContainsString('Edited reference', $html);
+        $this->assertStringContainsString('12.50', $html);
+        $this->post(route('memos.store'), ['template_id' => $template->id, 'subject' => 'Next memo', 'action' => 'draft'])->assertSessionHasNoErrors();
+        $this->assertSame([], Memo::latest('id')->firstOrFail()->inserted_items);
+    }
+
+    public function test_invalid_insertions_are_rejected_without_changing_template(): void
+    {
+        $template = $this->template();
+        $this->post(route('memos.store'), [
+            'template_id' => $template->id, 'subject' => 'Invalid', 'action' => 'draft',
+            'inserted_items' => [['kind' => 'table', 'label' => 'Invalid', 'columns' => []]],
+        ])->assertSessionHasErrors('inserted_items.0.columns');
+        $this->assertSame(0, Memo::count());
+        $this->assertSame(0, $template->tables()->count());
+        $this->postJson('/templates/'.$template->id.'/insert', ['kind' => 'field', 'label' => 'Old endpoint', 'type' => 'text'])->assertNotFound();
     }
 }

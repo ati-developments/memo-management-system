@@ -29,5 +29,6 @@
     </table>
 @endforeach
 @include('memos.text-blocks', ['position' => 'before_recommendation'])
+@include('memos.inserted-items')
 <p class="recommendation">We recommend and seek your approval to make the above payment.</p>
 @include('memos.text-blocks', ['position' => 'before_signatures'])

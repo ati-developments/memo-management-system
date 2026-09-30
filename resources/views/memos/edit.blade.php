@@ -83,6 +83,7 @@ Memo builder
             <button type="button" data-add-row="edit-table-{{ $table->id }}">+ Add row</button>
         @endforeach
         @include('memos.add-text-button', ['position' => 'before_recommendation'])
+        @include('memos.inserted-items-editor')
         <div class="actions">
             <button class="primary" type="submit" name="action" value="draft">Save changes</button>
             <button type="submit" name="action" value="submit">Submit for approval</button>
