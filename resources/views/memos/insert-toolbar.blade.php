@@ -139,7 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-insert]').forEach(button => button.addEventListener('click', () => {
         kind = button.dataset.insert; form.reset(); columns.replaceChildren(); error.textContent = '';
         document.getElementById('memo-insert-title').textContent = 'Insert ' + kind;
-        form.querySelector('[data-name-label]').textContent = kind === 'field' ? 'Field name' : 'Table name';
+        form.querySelector('[data-name-label]').textContent = kind === 'field' ? 'Field name' : 'Table name (optional)';
+        form.elements.label.required = kind === 'field';
         form.elements.label.placeholder = kind === 'field' ? 'e.g. Purchase reference' : 'e.g. Cost breakdown';
         submit.textContent = kind === 'field' ? 'Add field' : 'Add table';
         document.getElementById('memo-insert-description').textContent = kind === 'field'
@@ -155,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
     let itemIndex = 0;
     const insertItem = payload => {
+        payload.label = (payload.label || '').trim();
         const index = itemIndex++;
         const prefix = `inserted_items[${index}]`;
         const hidden = (name, value) => {
@@ -179,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (kind === 'table' && !payload.columns.length) throw new Error('Add at least one column.');
             insertItem(payload);
             dialog.close();
-            document.getElementById('memo-insert-status').textContent = payload.label + ' added to this memo only.';
+            document.getElementById('memo-insert-status').textContent = (payload.label || 'Table') + ' added to this memo only.';
         } catch (exception) {
             error.textContent = exception.message || 'Unable to insert. Please try again.';
         } finally { busy = false; submit.disabled = false; }
@@ -202,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updatePreview(input.id);
             } else {
                 const group = element('div', 'memo-table-form-section');
-                group.append(element('h4', 'memo-table-title', item.table_label));
+                if (item.table_label) group.append(element('h4', 'memo-table-title', item.table_label));
                 const table = element('table', 'memo-entry-table');
                 const head = table.createTHead().insertRow();
                 item.columns.forEach(column => head.append(element('th', '', column.column_label)));
@@ -219,7 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 const add = element('button', 'btn btn-secondary', '+ Add row'); add.type = 'button'; add.onclick = () => addRow(); group.append(add);
                 document.getElementById('inserted-memo-tables').append(group);
-                const preview = element('div', 'preview-table-section'); preview.append(element('h3', 'document-section-title', item.table_label));
+                const preview = element('div', 'preview-table-section');
+                if (item.table_label) preview.append(element('h3', 'document-section-title', item.table_label));
                 const previewTable = element('table', 'charges-table dynamic-preview-table'); previewTable.id = 'preview-table-' + item.id;
                 const previewHead = previewTable.createTHead().insertRow(); item.columns.forEach(column => previewHead.append(element('th', '', column.column_label)));
                 previewTable.createTBody(); preview.append(previewTable);

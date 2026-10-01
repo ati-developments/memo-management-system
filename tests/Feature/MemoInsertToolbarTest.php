@@ -44,6 +44,24 @@ class MemoInsertToolbarTest extends TestCase
         $this->assertSame([], Memo::latest('id')->firstOrFail()->inserted_items);
     }
 
+    public function test_table_names_are_optional_but_field_names_are_required(): void
+    {
+        $template = $this->template();
+        $payload = ['template_id' => $template->id, 'subject' => 'Unnamed table', 'action' => 'draft',
+            'inserted_items' => [['kind' => 'table', 'label' => '', 'columns' => [
+                ['column_name' => 'column_0', 'column_label' => 'Amount', 'column_type' => 'decimal'],
+            ], 'rows' => [['column_0' => '25.00']]]]];
+        $this->post(route('memos.store'), $payload)->assertSessionHasNoErrors();
+        $memo = Memo::latest('id')->firstOrFail();
+        $this->get(route('memos.edit', $memo))->assertOk()->assertSee('25.00');
+        $this->put(route('memos.update', $memo), $payload)->assertSessionHasNoErrors();
+        $html = view('memos.inserted-items', ['memo' => $memo->fresh()])->render();
+        $this->assertStringContainsString('25.00', $html);
+        $this->assertStringNotContainsString('<h2>', $html);
+        $payload['inserted_items'] = [['kind' => 'field', 'label' => '', 'type' => 'text']];
+        $this->post(route('memos.store'), $payload)->assertSessionHasErrors('inserted_items.0.label');
+    }
+
     public function test_invalid_insertions_are_rejected_without_changing_template(): void
     {
         $template = $this->template();

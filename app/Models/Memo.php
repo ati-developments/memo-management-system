@@ -20,6 +20,7 @@ class Memo extends Model
         'content',
         'text_blocks',
         'inserted_items',
+        'table_formats',
         'submitted_at',
         'completed_at',
     ];
@@ -27,6 +28,7 @@ class Memo extends Model
     protected $casts = [
         'text_blocks' => 'array',
         'inserted_items' => 'array',
+        'table_formats' => 'array',
         'submitted_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
@@ -34,6 +36,14 @@ class Memo extends Model
     public function template(): BelongsTo
     {
         return $this->belongsTo(MemoTemplate::class);
+    }
+
+    public function tableCellStyle(string $cell): string
+    {
+        $format = collect($this->table_formats ?? [])->firstWhere('cell', $cell) ?? [];
+        return (!empty($format['bold']) ? 'font-weight:bold;' : '')
+            . (!empty($format['italic']) ? 'font-style:italic;' : '')
+            . (!empty($format['underline']) ? 'text-decoration:underline;' : '');
     }
 
     public function department(): BelongsTo

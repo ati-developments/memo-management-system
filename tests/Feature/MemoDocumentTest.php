@@ -10,6 +10,32 @@ class MemoDocumentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_table_cell_formatting_survives_save_edit_and_document_rendering(): void
+    {
+        $memo = $this->draft();
+        $table = TemplateTable::create(['template_id' => $memo->template_id, 'table_name' => 'costs', 'table_label' => 'Costs', 'is_active' => true]);
+        $table->columns()->create(['column_name' => 'amount', 'column_label' => 'Amount', 'column_type' => 'decimal', 'is_active' => true]);
+        $formats = [
+            ['cell' => 'tables['.$table->id.'][rows][2][amount]', 'bold' => 1, 'italic' => 1, 'underline' => 1],
+            ['cell' => 'inserted_items[0][rows][0][column_0]', 'bold' => 1, 'italic' => 0, 'underline' => 1],
+        ];
+        $payload = ['subject' => 'Formatted cells', 'action' => 'draft', 'table_formats' => $formats,
+            'tables' => [$table->id => ['rows' => [2 => ['amount' => '125.50']]]],
+            'inserted_items' => [['kind' => 'table', 'columns' => [
+                ['column_name' => 'column_0', 'column_label' => 'Notes', 'column_type' => 'text'],
+            ], 'rows' => [['column_0' => 'Special payment']]]]];
+        $this->put(route('memos.update', $memo), $payload)->assertSessionHasNoErrors();
+        $this->assertSame($formats, $memo->fresh()->table_formats);
+        $this->assertSame('125.50', $memo->fresh()->tableRows->first()->row_data['amount']);
+        $this->get(route('memos.edit', $memo))->assertOk()->assertSee('tables['.$table->id.'][rows][2][amount]', false);
+        $html = view('memos.pdf', ['memo' => $memo->fresh(), 'values' => collect(), 'approvals' => collect(), 'signatureImages' => []])->render();
+        $this->assertStringContainsString('style="font-weight:bold;font-style:italic;text-decoration:underline;">125.50', $html);
+        $this->assertStringContainsString('style="font-weight:bold;text-decoration:underline;">Special payment', $html);
+        $this->get(route('memos.pdf', $memo))->assertOk();
+        $payload['table_formats'][0]['bold'] = 'font-size:999px';
+        $this->put(route('memos.update', $memo), $payload)->assertSessionHasErrors('table_formats.0.bold');
+    }
+
     public function test_attachments_appear_in_the_pdf_and_approval_document(): void
     {
         \Illuminate\Support\Facades\Storage::fake('local');

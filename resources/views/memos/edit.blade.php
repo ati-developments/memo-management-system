@@ -62,21 +62,22 @@ Memo builder
         @foreach($memo->template->tables->where('is_active', true)->sortBy('table_order') as $table)
             @php
                 $columns = $table->columns->where('is_active', true)->sortBy('column_order');
-                $rows = old('tables.'.$table->id.'.rows', $memo->tableRows->where('template_table_id', $table->id)->pluck('row_data')->all());
+                $rows = old('tables.'.$table->id.'.rows', $memo->tableRows->where('template_table_id', $table->id)->pluck('row_data', 'row_order')->all());
                 if (!$rows) $rows = [[]];
             @endphp
             @include('memos.add-text-button', ['position' => 'table_'.$table->id])
             <h2>{{ $table->table_label ?: 'Details' }}</h2>
             <div style="overflow-x:auto">
-                <table id="edit-table-{{ $table->id }}"><thead><tr>@foreach($columns as $column)<th>{{ $column->column_label }}</th>@endforeach<th>Action</th></tr></thead><tbody>
+                <table id="edit-table-{{ $table->id }}"><thead><tr>@foreach($columns as $column)<th>{{ $column->column_label }}</th>@endforeach</tr></thead><tbody>
                 @foreach($rows as $index => $row)
-                    <tr>@foreach($columns as $column)<td>
+                    <tr>@foreach($columns as $column)<td @class(['memo-row-end' => $loop->last])>
                         @if($column->column_type === 'textarea')
                             <textarea aria-label="{{ $column->column_label }}" name="tables[{{ $table->id }}][rows][{{ $index }}][{{ $column->column_name }}]">{{ $row[$column->column_name] ?? '' }}</textarea>
                         @else
                             <input aria-label="{{ $column->column_label }}" name="tables[{{ $table->id }}][rows][{{ $index }}][{{ $column->column_name }}]" type="{{ $column->column_type === 'decimal' ? 'number' : (in_array($column->column_type, ['number', 'date']) ? $column->column_type : 'text') }}" step="any" value="{{ $row[$column->column_name] ?? '' }}">
                         @endif
-                    </td>@endforeach<td><button type="button" data-remove-row>Remove</button></td></tr>
+                    @if($loop->last)<button type="button" class="remove-memo-row" data-remove-row aria-label="Remove row" title="Remove row">&times;</button>@endif
+                    </td>@endforeach</tr>
                 @endforeach
                 </tbody></table>
             </div>
@@ -120,4 +121,5 @@ if (totalField) {
     chargeFields.filter(Boolean).forEach(input => input.addEventListener('input', updateTotal));
 }
 </script>
+@include('memos.table-formatting')
 @endsection

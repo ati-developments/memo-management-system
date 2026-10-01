@@ -25,7 +25,7 @@
     @continue($rows->isEmpty())
     @if($table?->table_label)<h2>{{ $table->table_label }}</h2>@endif
     <table class="charges"><thead><tr>@foreach($columns as $label)<th>{{ $label }}</th>@endforeach</tr></thead>
-        <tbody>@foreach($rows as $row)<tr>@foreach($columns as $key => $label)<td>{{ $row->row_data[$key] ?? '—' }}</td>@endforeach</tr>@endforeach</tbody>
+        <tbody>@foreach($rows as $row)<tr>@foreach($columns as $key => $label)<td style="{{ $memo->tableCellStyle('tables['.$tableId.'][rows]['.$row->row_order.']['.$key.']') }}">{{ $row->row_data[$key] ?? '—' }}</td>@endforeach</tr>@endforeach</tbody>
     </table>
 @endforeach
 @include('memos.text-blocks', ['position' => 'before_recommendation'])

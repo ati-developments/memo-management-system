@@ -88,10 +88,16 @@ class MemoController extends Controller
         ])->findOrFail($editingMemo?->template_id ?? $request->template_id);
 
         $rules = [
+            'table_formats' => ['nullable', 'array', 'max:5000'],
+            'table_formats.*' => ['array:cell,bold,italic,underline'],
+            'table_formats.*.cell' => ['required', 'string', 'max:255', 'regex:/^(tables|inserted_items)\[[a-zA-Z0-9_]+\]\[rows\]\[[0-9]+\]\[[a-zA-Z0-9_]+\]$/'],
+            'table_formats.*.bold' => ['required', 'boolean'],
+            'table_formats.*.italic' => ['required', 'boolean'],
+            'table_formats.*.underline' => ['required', 'boolean'],
             'inserted_items' => ['nullable', 'array', 'max:100'],
             'inserted_items.*' => ['array:kind,label,type,value,columns,rows'],
             'inserted_items.*.kind' => ['required', 'in:field,table'],
-            'inserted_items.*.label' => ['required', 'string', 'max:255'],
+            'inserted_items.*.label' => ['required_if:inserted_items.*.kind,field', 'nullable', 'string', 'max:255'],
             'inserted_items.*.type' => ['required_if:inserted_items.*.kind,field', 'in:text,textarea,number,date'],
             'inserted_items.*.value' => ['nullable', 'string', 'max:20000'],
             'inserted_items.*.columns' => ['required_if:inserted_items.*.kind,table', 'array', 'min:1', 'max:20'],
@@ -192,6 +198,7 @@ class MemoController extends Controller
                 'creation_type' => 'template',
                 'content'       => null,
                 'inserted_items' => $request->input('inserted_items', $editingMemo?->inserted_items ?? []),
+                'table_formats' => $request->input('table_formats', $editingMemo?->table_formats ?? []),
                 'text_blocks'   => collect($request->input('text_blocks', []))->filter(fn ($block) => filled($block['text'] ?? null))->map(function ($block) {
                     if (isset($block['html'])) $block['html'] = \App\Support\MemoTextFormatting::sanitize($block['html']);
                     return $block;
@@ -201,7 +208,7 @@ class MemoController extends Controller
                 $memo = Memo::query()->lockForUpdate()->findOrFail($editingMemo->id);
                 abort_unless((int) $memo->created_by === (int) $user->id, 403);
                 abort_unless($memo->status === 'draft', 403, 'Only draft memos can be edited.');
-                $memo->update(['subject' => $attributes['subject'], 'status' => $status, 'text_blocks' => $attributes['text_blocks'], 'inserted_items' => $attributes['inserted_items']]);
+                $memo->update(['subject' => $attributes['subject'], 'status' => $status, 'text_blocks' => $attributes['text_blocks'], 'inserted_items' => $attributes['inserted_items'], 'table_formats' => $attributes['table_formats']]);
                 $memo->fieldValues()->whereIn('field_name', $template->fields->pluck('field_name')->merge(['to', 'from', 'through', 'date', 'subject']))->delete();
                 $memo->tableRows()->whereIn('template_table_id', $template->tables->pluck('id'))->delete();
             } else {

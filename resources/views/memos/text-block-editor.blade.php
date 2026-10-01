@@ -5,7 +5,8 @@
         return $block;
     })->values();
 @endphp
-<section class="memo-text-editor" aria-label="Optional memo text" @if($compact ?? false) data-compact hidden @endif>
+<button type="button" class="btn btn-secondary" data-edit-memo-text hidden>Edit memo text</button>
+<section id="memo-text-editor" class="memo-text-editor" aria-label="Optional memo text" @if($compact ?? false) data-compact hidden @endif>
     @unless($compact ?? false)
     <h2>Optional memo text</h2>
     <p>Add text just for this memo. Choose where each block appears. To place text between two tables, choose before the second table.</p>
@@ -15,6 +16,9 @@
     @unless($compact ?? false)
         <button type="button" class="btn btn-secondary" data-add-text>+ Add text</button>
     @endunless
+    <div class="memo-text-actions">
+        <button type="button" class="btn btn-primary" data-finish-text>Done</button>
+    </div>
     <template data-text-block-template>
         <div class="memo-text-block">
             <label>Position <select class="form-control" data-block-position>
@@ -38,6 +42,7 @@
 </section>
 <style>
     .memo-text-editor { grid-column:1 / -1; margin:24px 0; padding:18px; border:1px solid var(--ui-line); border-radius:10px; color:var(--ui-ink); }
+    .memo-text-editor[hidden], [data-edit-memo-text][hidden] { display:none; }
     .memo-text-editor h2 { font-size:16px; margin:0 0 8px; }
     .memo-text-editor > p { font-size:12px; color:var(--ui-muted); line-height:1.6; }
     .memo-text-block { margin:16px 0; padding:14px; border:1px solid var(--ui-line); border-radius:8px; }
@@ -52,6 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const editor = document.querySelector('.memo-text-editor');
     const list = editor.querySelector('[data-text-block-list]');
     const prototype = editor.querySelector('template');
+    const editText = document.querySelector('[data-edit-memo-text]');
+    let collapsed = false;
     const positions = @json(array_keys($textPositions));
     let activeText = null;
     const toolbarButtons = document.querySelectorAll('[data-memo-format]');
@@ -71,7 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     const sync = () => {
-        if (editor.hasAttribute('data-compact')) editor.hidden = list.children.length === 0;
+        editor.hidden = collapsed || (editor.hasAttribute('data-compact') && list.children.length === 0);
+        editText.hidden = !collapsed || list.children.length === 0;
         [...list.children].sort((a, b) => a.querySelector('select').selectedIndex - b.querySelector('select').selectedIndex).forEach((block, index) => {
             if (list.children[index] !== block) list.insertBefore(block, list.children[index]);
         });
@@ -81,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const textarea = block.querySelector('textarea');
             const richText = block.querySelector('[data-rich-text]');
             const html = block.querySelector('[data-block-html]');
-            textarea.value = richText.innerText;
+            if (!editor.hidden) textarea.value = richText.innerText;
             html.value = richText.innerHTML;
             html.name = `text_blocks[${index}][html]`;
             select.name = `text_blocks[${index}][position]`;
@@ -98,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     const add = (value = {}) => {
+        collapsed = false;
         const block = prototype.content.firstElementChild.cloneNode(true);
         block.querySelector('select').value = value.position || 'after_subject';
         const richText = block.querySelector('[data-rich-text]');
@@ -123,6 +132,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return block;
     };
     (@json($initialTextBlocks) || []).forEach(add);
+    editor.querySelector('[data-finish-text]').addEventListener('click', () => {
+        sync();
+        collapsed = true;
+        editor.hidden = true;
+        editText.hidden = list.children.length === 0;
+        activeText = null;
+        toolbarButtons.forEach(button => button.disabled = true);
+        if (!editText.hidden) editText.focus();
+        else document.querySelector('[data-add-text-at]')?.focus();
+    });
+    editText.addEventListener('click', () => {
+        collapsed = false;
+        sync();
+        list.querySelector('[data-rich-text]')?.focus();
+    });
     editor.querySelector('[data-add-text]')?.addEventListener('click', () => add().querySelector('[data-rich-text]').focus());
     document.querySelectorAll('[data-add-text-at]').forEach(button => button.addEventListener('click', () => {
         add({position: button.dataset.addTextAt}).querySelector('[data-rich-text]').focus();

@@ -2259,8 +2259,11 @@ function addTableRow(tableId) {
         return;
     }
 
-    const rowIndex =
-        tbody.querySelectorAll('tr').length;
+    const rowIndex = Math.max(
+        Number(tbody.dataset.nextRowIndex || 0),
+        ...Array.from(tbody.querySelectorAll('[data-row-index]'), input => Number(input.dataset.rowIndex) + 1)
+    );
+    tbody.dataset.nextRowIndex = rowIndex + 1;
 
     let rowHtml = '<tr>';
 
@@ -2476,4 +2479,5 @@ function addPreviewTableRow(
 
 </script>
 
+@include('memos.table-formatting')
 @endsection
