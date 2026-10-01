@@ -49,7 +49,7 @@ class DashboardController extends Controller
             ->where('approver_id', $user?->id)
             ->where('action', 'pending')
             ->latest()
-            ->take(5)
+            ->take(2)
             ->get();
 
         return view('dashboard', compact(

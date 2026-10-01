@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Dashboard | Memo')
-@section('header-title', 'Dashboard')
+@section('header-title', '')
 @section('hide-page-header', 'true')
 
 @section('styles')

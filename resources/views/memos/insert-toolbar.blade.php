@@ -12,25 +12,34 @@
     </div>
     <p id="memo-insert-status" role="status" aria-live="polite"></p>
 </section>
-<dialog id="memo-insert-dialog" aria-labelledby="memo-insert-title">
+<dialog id="memo-insert-dialog" aria-labelledby="memo-insert-title" aria-describedby="memo-insert-description">
     <form id="memo-insert-form">
-        <h2 id="memo-insert-title">Insert field</h2>
-        <p>The new item will be saved with this memo only.</p>
-        <label>Name <input class="form-control" name="label" required maxlength="255"></label>
+        <header class="insert-dialog-header">
+            <div>
+                <span class="insert-dialog-badge">THIS MEMO ONLY</span>
+                <h2 id="memo-insert-title">Insert field</h2>
+                <p id="memo-insert-description">Add a detail to your memo without changing the template.</p>
+            </div>
+            <button type="button" class="insert-dialog-close" data-cancel-insert aria-label="Close insert dialog">&times;</button>
+        </header>
+        <div class="insert-dialog-body">
+        <label><span data-name-label>Field name</span> <input class="form-control" name="label" required maxlength="255" placeholder="e.g. Purchase reference" autocomplete="off"></label>
         <label data-field-type>Field type <select class="form-control" name="type">
             <option value="text">Text</option><option value="textarea">Paragraph</option>
             <option value="number">Number</option><option value="date">Date</option>
         </select></label>
         <section data-table-columns hidden>
-            <h3>Columns</h3>
+            <div class="insert-columns-heading"><h3>Table columns</h3><span data-column-count>0 / 20</span></div>
+            <p class="insert-dialog-hint">Choose a name and format for each column.</p>
             <div data-column-list></div>
-            <button type="button" class="btn btn-secondary" data-add-column>+ Column</button>
+            <button type="button" class="btn btn-secondary insert-add-column" data-add-column>+ Add column</button>
         </section>
         <p data-insert-error role="alert"></p>
-        <div class="memo-insert-actions">
-            <button type="button" class="btn btn-secondary" data-cancel-insert>Cancel</button>
-            <button type="submit" class="btn btn-primary">Insert</button>
         </div>
+        <footer class="insert-dialog-footer">
+            <button type="button" class="btn btn-secondary" data-cancel-insert>Cancel</button>
+            <button type="submit" class="btn btn-primary">Add field</button>
+        </footer>
     </form>
 </dialog>
 <style>
@@ -39,13 +48,43 @@
     .memo-insert-actions > span { font-size:12px; color:#666; }
     #memo-insert-status:empty { display:none; }
     #memo-insert-status { margin:10px 0 0; font-size:13px; }
-    #memo-insert-dialog { width:min(560px, calc(100% - 32px)); max-height:85vh; overflow:auto; border:1px solid #ddd; border-radius:12px; padding:24px; }
-    #memo-insert-dialog::backdrop { background:#0006; }
-    #memo-insert-dialog label { display:block; margin:14px 0; }
-    #memo-insert-dialog p { font-size:13px; line-height:1.5; }
-    [data-insert-error] { color:#b42318; }
-    .insert-column { display:grid; grid-template-columns:1fr 120px auto; gap:8px; align-items:center; margin:10px 0; }
-    @media(max-width:600px) { .insert-column { grid-template-columns:1fr; } .memo-insert-bar { position:static; } }
+    #memo-insert-dialog { --insert-bg:#fff; --insert-soft:#f6f8f4; --insert-ink:#24312b; --insert-muted:#68766c; --insert-border:#dde5da; box-sizing:border-box; width:min(640px, calc(100% - 32px)); max-height:90vh; max-height:90dvh; overflow:auto; border:1px solid var(--insert-border); border-radius:20px; padding:0; background:var(--insert-bg); color:var(--insert-ink); box-shadow:0 24px 80px #13251640; }
+    #memo-insert-dialog::backdrop { background:#101b29a6; backdrop-filter:blur(4px); }
+    #memo-insert-form { margin:0; }
+    #memo-insert-dialog .insert-dialog-header { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; padding:26px 28px 22px; border-bottom:1px solid var(--insert-border); background:var(--insert-soft); }
+    #memo-insert-dialog .insert-dialog-badge { display:inline-block; padding:5px 9px; border-radius:6px; background:var(--primary-soft); color:var(--primary-link); font-size:10px; font-weight:700; letter-spacing:.09em; }
+    #memo-insert-dialog h2 { margin:14px 0 8px; font-size:24px; line-height:1.2; color:var(--insert-ink); }
+    #memo-insert-dialog p { margin:0; font-size:13px; line-height:1.6; color:var(--insert-muted); }
+    #memo-insert-dialog .insert-dialog-close { display:grid; place-items:center; flex:none; width:34px; height:34px; padding:0; border:1px solid var(--insert-border); border-radius:50%; background:var(--insert-bg); color:var(--insert-muted); font-size:24px; cursor:pointer; }
+    #memo-insert-dialog .insert-dialog-close:hover { color:var(--insert-ink); background:var(--primary-soft); }
+    #memo-insert-dialog .insert-dialog-body { padding:24px 28px; }
+    #memo-insert-dialog label { display:block; margin:0 0 20px; font-size:13px; font-weight:600; color:var(--insert-ink); }
+    #memo-insert-dialog [hidden] { display:none; }
+    #memo-insert-dialog .form-control { box-sizing:border-box; width:100%; min-width:0; min-height:44px; padding:10px 12px; margin-top:8px; border:1px solid var(--insert-border); border-radius:9px; background:var(--insert-bg); color:var(--insert-ink); font:inherit; font-size:14px; font-weight:400; }
+    #memo-insert-dialog .form-control::placeholder { color:var(--insert-muted); opacity:.85; }
+    #memo-insert-dialog :is(button,input,select):focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
+    #memo-insert-dialog .insert-columns-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    #memo-insert-dialog h3 { margin:0; font-size:14px; color:var(--insert-ink); }
+    #memo-insert-dialog [data-column-count] { color:var(--insert-muted); font-size:12px; font-variant-numeric:tabular-nums; }
+    #memo-insert-dialog .insert-dialog-hint { margin:6px 0 14px; }
+    #memo-insert-dialog .insert-column { display:grid; grid-template-columns:minmax(0,1fr) 140px 36px; gap:10px; align-items:end; margin:10px 0; padding:14px; border:1px solid var(--insert-border); border-radius:12px; background:var(--insert-soft); }
+    #memo-insert-dialog .insert-column label { margin:0; font-size:11px; }
+    #memo-insert-dialog .insert-column .form-control { margin-top:6px; }
+    #memo-insert-dialog .insert-remove-column { height:44px; padding:0; border:0; border-radius:8px; background:transparent; color:var(--insert-muted); font-size:22px; cursor:pointer; }
+    #memo-insert-dialog .insert-remove-column:hover { background:#b4231812; color:#d04438; }
+    #memo-insert-dialog .btn { min-height:42px; padding:10px 18px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; }
+    #memo-insert-dialog .btn-secondary { background:var(--insert-bg); color:var(--insert-ink); border:1px solid var(--insert-border); }
+    #memo-insert-dialog .btn-secondary:hover { background:var(--insert-soft); }
+    #memo-insert-dialog .btn-primary { background:var(--primary); color:var(--primary-ink); border:1px solid var(--primary); }
+    #memo-insert-dialog .btn-primary:hover { background:var(--primary-hover); }
+    #memo-insert-dialog .insert-add-column { width:100%; border-style:dashed; margin-top:4px; }
+    #memo-insert-dialog button:disabled { opacity:.5; cursor:not-allowed; }
+    #memo-insert-dialog [data-insert-error]:empty { display:none; }
+    #memo-insert-dialog [data-insert-error]:not(:empty) { margin-top:16px; padding:12px; border:1px solid #d0443855; border-radius:8px; background:#d0443810; color:#b42318; }
+    #memo-insert-dialog .insert-dialog-footer { position:sticky; bottom:0; display:flex; justify-content:flex-end; gap:10px; padding:18px 28px; background:var(--insert-bg); border-top:1px solid var(--insert-border); }
+    html[data-theme=dark] #memo-insert-dialog { --insert-bg:#19263b; --insert-soft:#142034; --insert-ink:#e0e8f5; --insert-muted:#a3b1c7; --insert-border:#354761; color-scheme:dark; }
+    html[data-theme=dark] #memo-insert-dialog [data-insert-error] { color:#ffb4ab; }
+    @media(max-width:600px) { #memo-insert-dialog .insert-dialog-header, #memo-insert-dialog .insert-dialog-body, #memo-insert-dialog .insert-dialog-footer { padding:20px; } #memo-insert-dialog .insert-column { grid-template-columns:minmax(0,1fr) 36px; } #memo-insert-dialog .insert-column label:first-child { grid-column:1 / -1; } .memo-insert-bar { position:static; } }
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -76,6 +115,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (text !== undefined) node.textContent = text;
         return node;
     };
+    const updateColumnCount = () => {
+        form.querySelector('[data-column-count]').textContent = `${columns.children.length} / 20`;
+        form.querySelector('[data-add-column]').disabled = columns.children.length >= 20;
+    };
     const addColumn = () => {
         if (columns.children.length >= 20) return;
         const row = element('div', 'insert-column');
@@ -84,20 +127,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const type = element('select', 'form-control');
         type.setAttribute('aria-label', 'Column type');
         [['text','Text'],['textarea','Paragraph'],['number','Number'],['decimal','Decimal'],['date','Date']].forEach(([value, title]) => type.add(new Option(title, value)));
-        const remove = element('button', 'btn btn-secondary', 'Remove');
-        remove.type = 'button'; remove.onclick = () => row.remove();
-        row.append(label, type, remove); columns.append(row);
+        const nameLabel = element('label', '', 'Column name'); nameLabel.append(label);
+        const typeLabel = element('label', '', 'Format'); typeLabel.append(type);
+        const remove = element('button', 'insert-remove-column', '×');
+        remove.type = 'button'; remove.setAttribute('aria-label', 'Remove column'); remove.title = 'Remove column';
+        remove.onclick = () => { row.remove(); updateColumnCount(); form.querySelector('[data-add-column]').focus(); };
+        row.append(nameLabel, typeLabel, remove); columns.append(row);
+        updateColumnCount();
+        return label;
     };
     document.querySelectorAll('[data-insert]').forEach(button => button.addEventListener('click', () => {
         kind = button.dataset.insert; form.reset(); columns.replaceChildren(); error.textContent = '';
         document.getElementById('memo-insert-title').textContent = 'Insert ' + kind;
+        form.querySelector('[data-name-label]').textContent = kind === 'field' ? 'Field name' : 'Table name';
+        form.elements.label.placeholder = kind === 'field' ? 'e.g. Purchase reference' : 'e.g. Cost breakdown';
+        submit.textContent = kind === 'field' ? 'Add field' : 'Add table';
+        document.getElementById('memo-insert-description').textContent = kind === 'field'
+            ? 'Add a detail to your memo without changing the template.'
+            : 'Organize memo details into a table. You can add rows after inserting it.';
         form.querySelector('[data-field-type]').hidden = kind !== 'field';
         form.querySelector('[data-table-columns]').hidden = kind !== 'table';
         if (kind === 'table') { addColumn(); addColumn(); }
         dialog.showModal(); form.elements.label.focus();
     }));
-    form.querySelector('[data-add-column]').onclick = addColumn;
-    form.querySelector('[data-cancel-insert]').onclick = () => { if (!busy) dialog.close(); };
+    form.querySelector('[data-add-column]').onclick = () => addColumn()?.focus();
+    form.querySelectorAll('[data-cancel-insert]').forEach(button => { button.onclick = () => { if (!busy) dialog.close(); }; });
     dialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
     let itemIndex = 0;
     const insertItem = payload => {
