@@ -13,7 +13,6 @@
         <section class="login-area">
             @include('auth.brand')
             <div class="login-card">
-                <p class="form-eyebrow">Your workspace, ready when you are</p>
                 <header class="login-header"><h1>Welcome back.</h1><p>Enter your credentials to sign in to your account.</p></header>
                 @if(session('success'))
                     <div class="alert alert-success" role="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg><span>{{ session('success') }}</span></div>

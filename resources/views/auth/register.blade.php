@@ -14,6 +14,49 @@
     <title>Register - Memo Management System</title>
 
     @include('auth.styles')
+    <style>
+        body { height:100vh; height:100dvh; overflow:hidden; }
+        .register-page { height:100%; min-height:0; padding:16px 24px; }
+        .register-area { min-height:0; justify-content:center; }
+        .register-area > .auth-brand { flex-shrink:0; margin-bottom:12px; }
+        .register-area .auth-brand-image { width:180px; }
+        .register-container { max-width:1060px; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:20px 28px; border-radius:16px; }
+        .register-header { margin-bottom:16px; }
+        .register-header h1 { font-size:27px; margin-bottom:6px; }
+        .register-header .form-eyebrow { margin-bottom:6px; }
+        .register-header p { font-size:12px; }
+        .register-columns { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:28px; align-items:start; }
+        .register-details,.register-account { min-width:0; }
+        .register-account { padding-left:28px; border-left:1px solid var(--line); }
+        .register-container .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 18px; }
+        .register-container .register-account .form-grid { grid-template-columns:1fr; }
+        .register-container .full-width { grid-column:1 / -1; }
+        .register-container label { margin-bottom:5px; }
+        .register-container input,.register-container select { min-height:40px; padding:8px 12px; }
+        .register-container .form-section-heading { margin-top:0; }
+        .register-container .signature-section { padding:14px 16px; margin-top:0; }
+        .register-container .signature-section h3 { margin:0; }
+        .register-container .signature-section p { margin:6px 0 10px; font-size:11px; }
+        .register-container .signature-section .help-text { margin-top:6px; }
+        .register-container .signature-section .error { grid-column:1 / -1; }
+        .register-container .form-actions { margin-top:16px; padding-top:14px; }
+        .register-container .btn-register { min-height:40px; padding:9px 20px; }
+        .register-area > .auth-footer { flex-shrink:0; margin-top:10px; }
+        @media(max-width:700px) {
+            .register-columns { grid-template-columns:1fr; gap:24px; }
+            .register-account { padding-left:0; padding-top:20px; border-left:0; border-top:1px solid var(--line); }
+            .register-page { padding:52px 12px 12px; }
+            .register-container { padding:18px; }
+            .register-container .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .register-container .signature-section { display:block; }
+            .register-container .signature-section p { margin:6px 0 10px; }
+            .register-container .signature-section .help-text { margin-top:6px; }
+        }
+        @media(max-width:440px) {
+            .register-container .form-grid { grid-template-columns:1fr; }
+            .register-header h1 { font-size:24px; }
+        }
+    </style>
 
 </head>
 
@@ -71,15 +114,17 @@
         @csrf
 
 
+        <div class="register-columns">
+        <section class="register-details" aria-labelledby="register-details-title">
         <div class="form-grid">
 
 
-            <div class="form-section-heading"><span>01</span> Your details</div>
+            <div class="form-section-heading" id="register-details-title"><span>01</span> Your details</div>
 
             <div class="form-group">
 
                 <label for="name">
-                    Full Name
+                    Name
                     <span class="required">*</span>
                 </label>
 
@@ -277,7 +322,11 @@
             </div>
 
 
-            <div class="form-section-heading"><span>02</span> Account password</div>
+        </div>
+        </section>
+        <section class="register-account" aria-labelledby="register-account-title">
+        <div class="form-grid">
+            <div class="form-section-heading" id="register-account-title"><span>02</span> Account password</div>
 
             <div class="form-group">
 
@@ -353,6 +402,9 @@
 
         </div>
 
+
+        </section>
+        </div>
 
         <div class="form-actions">
 

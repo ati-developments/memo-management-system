@@ -39,7 +39,7 @@ class DashboardController extends Controller
             ])
             ->where('created_by', $user?->id)
             ->latest()
-            ->take(5)
+            ->take(4)
             ->get();
 
         $approvalQueue = MemoApproval::with([

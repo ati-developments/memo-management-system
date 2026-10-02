@@ -14,7 +14,7 @@
     .dash-account { display:flex; align-items:center; gap:14px; margin-left:auto; }
     .dash-account .profile-link { flex-shrink:0; }
     .dash-eyebrow { font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; }
-    .dash-header { display:flex; justify-content:space-between; align-items:center; gap:24px; padding-bottom:26px; margin-bottom:24px; border-bottom:1px solid #e1e3e8; }
+    .dash-header { display:flex; justify-content:space-between; align-items:center; gap:24px; padding-bottom:16px; margin-bottom:14px; border-bottom:1px solid #e1e3e8; }
     .dash h1 { margin:0 0 6px; font-size:clamp(24px,2vw,30px); font-weight:650; letter-spacing:-1px; overflow-wrap:anywhere; }
     .dash-subtitle { margin:0; color:var(--muted); font-size:13px; line-height:1.5; }
     .dash-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; flex-shrink:0; padding:10px 14px; border:1px solid #2153ca; border-radius:8px; background:var(--blue); color:white; font-size:12px; font-weight:600; box-shadow:0 3px 8px #275ddc18; }
@@ -87,13 +87,13 @@
 <div class="dash">
   
     
-    <header class="dash-header">
+    <!-- <header class="dash-header">
         <div>
             
         </div>
         <a href="{{ route('memos.new') }}" class="dash-button"><span aria-hidden="true">+</span> New memo</a>
-    </header>
-<br>
+    </header> -->
+
     <section class="dash-stats" aria-label="Memo overview">
         @foreach($stats as $stat)
             <a class="dash-stat {{ $stat['class'] }}" href="{{ $stat['url'] }}">
