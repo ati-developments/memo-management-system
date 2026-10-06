@@ -5,7 +5,7 @@
         <div class="brand">
 
             <a href="{{ route('dashboard') }}" class="sidebar-brand-link" aria-label="Amana Takaful Insurance - Dashboard">
-                <img src="{{ asset('storage/images/logo.png') }}" alt="Amana Takaful Insurance" class="sidebar-brand-image" width="608" height="239">
+                <img src="{{ asset('images/logo.png') }}" alt="Amana Takaful Insurance" class="sidebar-brand-image" width="608" height="239">
             </a>
 
         </div>

@@ -642,7 +642,7 @@ Memo builder
 
                     <div class="document-title">
 
-                        <div class="document-brand"><img src="{{ asset('storage/images/Amana-Takaful-logo.jpeg') }}" alt="Amana Takaful Insurance" style="width:187px;max-width:100%;height:auto"></div>
+                        <div class="document-brand"><img src="{{ asset('images/Amana-Takaful-logo.jpeg') }}" alt="Amana Takaful Insurance" style="width:187px;max-width:100%;height:auto"></div>
 
                         <h1>
                             MEMO

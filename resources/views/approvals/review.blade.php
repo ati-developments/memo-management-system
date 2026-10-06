@@ -84,7 +84,7 @@
     $approvals = $memo->approvals->sortBy('chain_order');
     $signatureImages = $approvals->where('action', 'approved')->filter(fn ($item) => $item->signature_path)
         ->mapWithKeys(fn ($item) => [$item->id => asset('storage/' . $item->signature_path)])->all();
-    $brandImage = asset('storage/images/Amana-Takaful-logo.jpeg');
+    $brandImage = asset('images/Amana-Takaful-logo.jpeg');
 @endphp
 
 <div class="memo-review">

@@ -48,7 +48,7 @@ class MemoDocumentController extends Controller
                 $signatureImages[$approval->id] = 'data:' . $mime . ';base64,' . base64_encode($bytes);
             }
         }
-        $logoPath = public_path('storage/images/Amana-Takaful-logo.jpeg');
+        $logoPath = public_path('images/Amana-Takaful-logo.jpeg');
         $brandImage = is_file($logoPath)
             ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath))
             : null;
