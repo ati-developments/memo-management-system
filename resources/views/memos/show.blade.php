@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'View Memo')
 @section('content')
-<div style="max-width:1100px;margin:24px auto">
+<div class="memo-details-page" style="margin-block:24px">
     @section('header-title')
 {{ $memo->memo_number }}
 @endsection
@@ -12,10 +12,10 @@ View, download, or print your memo.
 Memo details
 @endsection
 @section('header-back')
-<a href="{{ route('memos.my') }}">&larr; Back to my memos</a>
+<a href="{{ route('memos.my') }}">&larr; Back to Memos</a>
 @endsection
 @section('header-actions')
-<a href="{{ route('memos.all') }}" class="app-header-button secondary">All memos</a>
+@if(in_array(strtolower((string) auth()->user()?->role?->role_name), ['admin', 'administrator'], true))<a href="{{ route('memos.all') }}" class="app-header-button secondary">All memos</a>@endif
 @if((int) $memo->created_by === (int) auth()->id() && $memo->status === 'draft')
 <a href="{{ route('memos.edit', $memo) }}" class="app-header-button secondary">Edit draft</a>
 @endif

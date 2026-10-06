@@ -18,13 +18,13 @@
 Edit {{ $memo->memo_number }}
 @endsection
 @section('header-description')
-{{ $memo->template->template_name }} &middot; Draft
+{{ $memo->template->template_name }} &middot; {{ $memoStatusLabels['draft'] ?? 'Draft' }}
 @endsection
 @section('header-eyebrow')
 Memo builder
 @endsection
 @section('header-back')
-<a href="{{ route('memos.my') }}">&larr; Back to my memos</a>
+<a href="{{ route('memos.my') }}">&larr; Back to Memos</a>
 @endsection
     @if($errors->any())<div role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <form method="POST" enctype="multipart/form-data" action="{{ route('memos.update', $memo) }}">
@@ -32,17 +32,18 @@ Memo builder
         @method('PUT')
         <label for="memo-attachments">Add attachments (up to 10 files, 10 MB each)</label>
         <input id="memo-attachments" type="file" name="attachments[]" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg">
-        @if($memo->attachments->isNotEmpty())
-            <p>Current attachments:</p>
-            <ul>@foreach($memo->attachments as $attachment)<li><a href="{{ route('memos.attachments.download', [$memo, $attachment]) }}">{{ $attachment->original_name }}</a></li>@endforeach</ul>
-        @endif
-        @if($memo->template->allow_optional_text || !empty($memo->text_blocks))
-            @include('memos.text-block-editor')
-        @endif
-        @foreach(['to' => 'To', 'from' => 'From', 'through' => 'Through', 'date' => 'Date', 'subject' => 'Subject'] as $name => $label)
+        @if($memo->attachments->isNotEmpty())<p>Current attachments:</p><ul>@foreach($memo->attachments as $attachment)<li><a href="{{ route('memos.attachments.download', [$memo, $attachment]) }}">{{ $attachment->original_name }}</a></li>@endforeach</ul>@endif
+        @if($memo->template->allow_optional_text || !empty($memo->text_blocks))@include('memos.text-block-editor')@endif
+        @foreach(['to' => 'Recipients (To)', 'from' => 'From', 'through' => 'Through', 'date' => 'Date', 'subject' => 'Subject'] as $name => $label)
             <label for="field_{{ $name }}">{{ $label }}</label>
+            @if($name === 'to')
+                <textarea id="field_to" name="to" rows="3" maxlength="1000" aria-describedby="to-help"
+                    placeholder="Enter one recipient per line">{{ old('to', $values->get('to')) }}</textarea>
+                <small id="to-help">Enter one recipient per line.</small>
+            @else
             <input id="field_{{ $name }}" name="{{ $name }}" type="{{ $name === 'date' ? 'date' : 'text' }}"
                 value="{{ old($name, $name === 'subject' ? $memo->subject : ($values->get($name) ?? ($name === 'from' ? auth()->user()->name : ($name === 'date' ? $memo->created_at->format('Y-m-d') : '')))) }}" @required($name === 'subject')>
+            @endif
         @endforeach
         @foreach($memo->template->fields->where('is_active', true)->sortBy('field_order') as $field)
             @continue(in_array($field->field_name, ['to', 'from', 'through', 'date', 'subject']))
@@ -85,6 +86,7 @@ Memo builder
         @endforeach
         @include('memos.add-text-button', ['position' => 'before_recommendation'])
         @include('memos.inserted-items-editor')
+        @include('memos.workflow-editor')
         <div class="actions">
             <button class="primary" type="submit" name="action" value="draft">Save changes</button>
             <button type="submit" name="action" value="submit">Submit for approval</button>

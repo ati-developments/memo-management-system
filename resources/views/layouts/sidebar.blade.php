@@ -13,61 +13,38 @@
 
         <nav class="nav" aria-label="Main navigation">
 
-            <a aria-label="Dashboard" title="Dashboard" href="{{ route('dashboard') }}"
-               class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-
-                <span class="nav-icon">@include('dashboard.icon', ['icon' => 'grid'])</span>
-                <span>Dashboard</span>
-
-            </a>
-
-
-            <a aria-label="Templates" title="Templates" href="{{ route('templates.index') }}" class="nav-item {{ request()->routeIs('templates.*') ? 'active' : '' }}">
-
-                <span class="nav-icon">@include('dashboard.icon', ['icon' => 'document'])</span>
-                <span>Templates</span>
-
-            </a>
-
-
-            <a aria-label="New memo" title="New memo" href="{{ route('memos.new') }}" class="nav-item new-memo {{ request()->routeIs('memos.new', 'memos.create', 'memos.create.*') ? 'active' : '' }}">
-
-                <span class="nav-icon">@include('dashboard.icon', ['icon' => 'plus'])</span>
-                <span>New Memo</span>
-
-            </a>
-
-
-            <a aria-label="My memos" title="My memos" href="{{ route('memos.my') }}" class="nav-item {{ request()->routeIs('memos.my') ? 'active' : '' }}">
-
-                <span class="nav-icon">@include('dashboard.icon', ['icon' => 'document'])</span>
-                <span>My Memos</span>
-
-            </a>
-
-
-            <a aria-label="Approvals" title="Approvals" href="{{ route('approvals.index') }}" class="nav-item {{ request()->routeIs('approvals.*') ? 'active' : '' }}">
-
-                <span class="nav-icon">@include('dashboard.icon', ['icon' => 'check'])</span>
-                <span>Approvals</span>
-
-                @if(($needsMyAction ?? 0) > 0)
-
-                    <span class="badge">
-                        {{ $needsMyAction }}
-                    </span>
-
+            @foreach($sidebarMenuItems ?? [] as $item)
+                @php
+                    $itemAccessKey = $item->access_key ?? $item->item_key;
+                    $adminFullMenu = $isAdmin ?? false;
+                    $itemAllowed = $adminFullMenu || ((($isAdmin ?? false) || !$item->admin_only) && ($item->is_group || in_array($itemAccessKey, $menuAccess ?? [], true)));
+                    $children = $item->children->filter(fn ($child) => $adminFullMenu || ((($isAdmin ?? false) || !$child->admin_only) && in_array($child->access_key ?? $child->item_key, $menuAccess ?? [], true)));
+                    $groupOpen = $children->contains(fn ($child) => $child->route_name && request()->routeIs($child->route_name, $child->route_name . '.*'));
+                    $active = $item->route_name && request()->routeIs($item->route_name, $item->route_name . '.*');
+                @endphp
+                @if($itemAllowed && ($item->is_group ? $children->isNotEmpty() : true))
+                    @if($item->is_group)
+                        <div class="nav-group">
+                            <button type="button" class="nav-item nav-group-toggle" aria-expanded="{{ $groupOpen ? 'true' : 'false' }}" aria-controls="sidebar-menu-{{ $item->id }}" data-nav-toggle>
+                                <span class="nav-icon">@include('dashboard.icon', ['icon' => $item->icon])</span><span>{{ $item->label }}</span><span class="nav-expand-arrow" aria-hidden="true">{{ $groupOpen ? '⌄' : '›' }}</span>
+                            </button>
+                            <div class="nav-subitems" id="sidebar-menu-{{ $item->id }}" @if(!$groupOpen) hidden @endif>
+                                @foreach($children as $child)
+                                    <a aria-label="{{ $child->label }}" title="{{ $child->label }}" href="{{ $child->route_name ? route($child->route_name) : $child->url }}" class="nav-item {{ $child->item_key === 'new_memo' ? 'new-memo' : '' }} {{ $child->route_name && request()->routeIs($child->route_name, $child->route_name . '.*') ? 'active' : '' }}">
+                                        <span class="nav-icon">@include('dashboard.icon', ['icon' => $child->icon])</span><span>{{ $child->label }}</span>
+                                        @if($child->item_key === 'approvals' && ($needsMyAction ?? 0) > 0)<span class="badge">{{ $needsMyAction }}</span>@endif
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <a aria-label="{{ $item->label }}" title="{{ $item->label }}" href="{{ $item->route_name ? route($item->route_name) : $item->url }}" class="nav-item {{ $item->item_key === 'new_memo' ? 'new-memo' : '' }} {{ $active ? 'active' : '' }}">
+                            <span class="nav-icon">@include('dashboard.icon', ['icon' => $item->icon])</span><span>{{ $item->label }}</span>
+                            @if($item->item_key === 'approvals' && ($needsMyAction ?? 0) > 0)<span class="badge">{{ $needsMyAction }}</span>@endif
+                        </a>
+                    @endif
                 @endif
-
-            </a>
-
-
-            <a aria-label="All memos" title="All memos" href="{{ route('memos.all') }}" class="nav-item {{ request()->routeIs('memos.all') ? 'active' : '' }}">
-
-                <span class="nav-icon">@include('dashboard.icon', ['icon' => 'grid'])</span>
-                <span>All Memos</span>
-
-            </a>
+            @endforeach
 
         </nav>
 
@@ -76,23 +53,16 @@
 
         <div class="user-area">
 
-            <div class="user-avatar">
-
-                {{ strtoupper(substr($user?->name ?? 'User', 0, 2)) }}
-
-            </div>
 
             <div>
 
                 <div class="user-name">
 
-                    {{ $user?->name ?? 'User' }}
 
                 </div>
 
                 <div class="user-role">
 
-                    {{ $user?->designation ?? 'User' }}
 
                 </div>
 
@@ -109,3 +79,15 @@
         </form>
 
     </aside>
+
+    <script>
+        document.querySelectorAll('[data-nav-toggle]').forEach((toggle) => {
+            toggle.addEventListener('click', () => {
+                const expanded = toggle.getAttribute('aria-expanded') === 'true';
+                const submenu = document.getElementById(toggle.getAttribute('aria-controls'));
+                toggle.setAttribute('aria-expanded', String(!expanded));
+                submenu.hidden = expanded;
+                toggle.querySelector('.nav-expand-arrow').textContent = expanded ? '›' : '⌄';
+            });
+        });
+    </script>

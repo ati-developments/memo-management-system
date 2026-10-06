@@ -67,7 +67,7 @@ Document register
 
     <div class="memo-filters">
         <nav class="status-tabs" aria-label="Filter by status">
-            @foreach(['all' => 'All', 'pending' => 'Pending', 'approved' => 'Approved', 'draft' => 'Draft', 'rejected' => 'Rejected'] as $value => $label)
+            @foreach(['all' => 'All', 'pending' => ($memoStatusLabels['pending'] ?? 'Pending'), 'approved' => ($memoStatusLabels['approved'] ?? 'Approved'), 'draft' => ($memoStatusLabels['draft'] ?? 'Draft'), 'rejected' => 'Rejected'] as $value => $label)
                 <a href="{{ route('memos.all', array_filter(['status' => $value === 'all' ? null : $value, 'search' => request('search')])) }}" class="status-tab {{ request('status', 'all') === $value ? 'active' : '' }}">
                     {{ $label }} <span class="tab-count">{{ $counts[$value] }}</span>
                 </a>
@@ -94,7 +94,7 @@ Document register
                                 <td><span class="memo-author">{{ $memo->creator?->name ?? 'Unknown' }}</span></td>
                                 <td><span class="memo-department">{{ $memo->department?->department_name ?? '—' }}</span></td>
                                 <td><span class="memo-date">{{ $memo->created_at?->format('d M Y') ?? '—' }}</span></td>
-                                <td><span class="status {{ strtolower($memo->status) }}">{{ ucfirst($memo->status) }}</span></td>
+                                <td><span class="status {{ strtolower($memo->status) }}">{{ $memoStatusLabels[$memo->status] ?? ucfirst($memo->status) }}</span></td>
                                 <td><span class="approval-summary"><strong>{{ $memo->approved_approvals_count }}</strong> / {{ $memo->total_approvals_count }} signed</span></td>
                                 <td><a class="status-tab" href="{{ route('memos.pdf', $memo) }}" target="_blank" rel="noopener">View</a></td>
                             </tr>

@@ -33,7 +33,7 @@ class MemoController extends Controller
 
         return response()->json($templates);
     }
-    public function createFromTemplate(\App\Models\MemoTemplate $template)
+    public function createFromTemplate(\App\Models\MemoTemplate $template, Request $request)
     {
         $template->load([
             'department',
@@ -59,7 +59,18 @@ class MemoController extends Controller
             ->where('is_active', true)
             ->first();
 
-        return view('memos.create', compact('template', 'approvalWorkflow'));
+        $memo = null;
+        $values = collect();
+        if ($request->filled('memo_id')) {
+            $memo = Memo::with(['fieldValues', 'tableRows', 'attachments'])->findOrFail($request->integer('memo_id'));
+            $isAdmin = in_array(strtolower((string) auth()->user()?->role?->role_name), ['admin', 'administrator'], true);
+            abort_unless((int) $memo->template_id === (int) $template->id, 404);
+            abort_unless($isAdmin || ((int) $memo->created_by === (int) auth()->id() && $memo->status === 'draft'), 403);
+            $values = $memo->fieldValues->pluck('field_value', 'field_name');
+        }
+
+        $workflowUsers = \App\Models\User::orderBy('name')->get(['id', 'name', 'designation']);
+        return view('memos.create', compact('template', 'approvalWorkflow', 'workflowUsers', 'memo', 'values'));
     }
     public function store(Request $request)
     {
@@ -88,6 +99,13 @@ class MemoController extends Controller
         ])->findOrFail($editingMemo?->template_id ?? $request->template_id);
 
         $rules = [
+            'workflow_config' => ['sometimes', 'array:approval_type,approval_rule,minimum_approvals,steps'],
+            'workflow_config.approval_type' => ['required_with:workflow_config', 'in:sequential,open'],
+            'workflow_config.approval_rule' => ['required_with:workflow_config', 'in:all,any,minimum'],
+            'workflow_config.minimum_approvals' => ['nullable', 'required_if:workflow_config.approval_rule,minimum', 'integer', 'min:1'],
+            'workflow_config.steps' => ['required_with:workflow_config', 'array', 'min:1', 'max:50'],
+            'workflow_config.steps.*' => ['array:approver_id'],
+            'workflow_config.steps.*.approver_id' => ['required', 'integer', 'exists:users,id', 'distinct'],
             'table_formats' => ['nullable', 'array', 'max:5000'],
             'table_formats.*' => ['array:cell,bold,italic,underline'],
             'table_formats.*.cell' => ['required', 'string', 'max:255', 'regex:/^(tables|inserted_items)\[[a-zA-Z0-9_]+\]\[rows\]\[[0-9]+\]\[[a-zA-Z0-9_]+\]$/'],
@@ -133,7 +151,24 @@ class MemoController extends Controller
             }
         }
         $request->validate($rules);
-        if ($request->input('action') === 'submit' && !\App\Models\ApprovalWorkflow::where('template_id', $template->id)->where('is_active', true)->exists()) {
+        $workflowConfig = $request->input('workflow_config', $editingMemo?->workflow_config);
+        if (!$workflowConfig) {
+            $defaultWorkflow = \App\Models\ApprovalWorkflow::with('steps')->where('template_id', $template->id)->where('is_active', true)->first();
+            if ($defaultWorkflow) {
+                $workflowConfig = [
+                    'approval_type' => $defaultWorkflow->approval_type,
+                    'approval_rule' => $defaultWorkflow->approval_rule,
+                    'minimum_approvals' => $defaultWorkflow->minimum_approvals,
+                    'steps' => $defaultWorkflow->steps->map(fn ($step) => ['approver_id' => $step->approver_id])->all(),
+                ];
+            }
+        }
+        if ($workflowConfig && $workflowConfig['approval_rule'] === 'minimum'
+            && (int) $workflowConfig['minimum_approvals'] > count($workflowConfig['steps'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['workflow_config.minimum_approvals' => 'Minimum approvals cannot exceed the number of approvers.']);
+        }
+        if ($workflowConfig && $workflowConfig['approval_rule'] !== 'minimum') $workflowConfig['minimum_approvals'] = null;
+        if ($request->input('action') === 'submit' && !$workflowConfig) {
             throw \Illuminate\Validation\ValidationException::withMessages(['action' => 'Configure an active approval workflow before submitting this memo.']);
         }
 
@@ -162,6 +197,7 @@ class MemoController extends Controller
             $user,
             $template,
             $action,
+            $workflowConfig,
             $editingMemo
         ) {
 
@@ -199,6 +235,7 @@ class MemoController extends Controller
                 'content'       => null,
                 'inserted_items' => $request->input('inserted_items', $editingMemo?->inserted_items ?? []),
                 'table_formats' => $request->input('table_formats', $editingMemo?->table_formats ?? []),
+                'workflow_config' => $workflowConfig,
                 'text_blocks'   => collect($request->input('text_blocks', []))->filter(fn ($block) => filled($block['text'] ?? null))->map(function ($block) {
                     if (isset($block['html'])) $block['html'] = \App\Support\MemoTextFormatting::sanitize($block['html']);
                     return $block;
@@ -206,14 +243,32 @@ class MemoController extends Controller
             ];
             if ($editingMemo) {
                 $memo = Memo::query()->lockForUpdate()->findOrFail($editingMemo->id);
-                abort_unless((int) $memo->created_by === (int) $user->id, 403);
-                abort_unless($memo->status === 'draft', 403, 'Only draft memos can be edited.');
-                $memo->update(['subject' => $attributes['subject'], 'status' => $status, 'text_blocks' => $attributes['text_blocks'], 'inserted_items' => $attributes['inserted_items'], 'table_formats' => $attributes['table_formats']]);
+                $isAdmin = in_array(strtolower((string) $user?->role?->role_name), ['admin', 'administrator'], true);
+                abort_unless($isAdmin || (int) $memo->created_by === (int) $user->id, 403);
+                abort_unless($isAdmin || $memo->status === 'draft', 403, 'Only draft memos can be edited.');
+                if ($isAdmin && $memo->status !== 'draft') {
+                    foreach ($memo->approvals()->whereNotNull('signature_path')->pluck('signature_path') as $signaturePath) {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($signaturePath);
+                    }
+                    $memo->approvals()->delete();
+                }
+                $memo->update([
+                    'subject' => $attributes['subject'],
+                    'status' => $status,
+                    'submitted_at' => null,
+                    'completed_at' => null,
+                    'text_blocks' => $attributes['text_blocks'],
+                    'inserted_items' => $attributes['inserted_items'],
+                    'table_formats' => $attributes['table_formats'],
+                    'workflow_config' => $workflowConfig,
+                ]);
                 $memo->fieldValues()->whereIn('field_name', $template->fields->pluck('field_name')->merge(['to', 'from', 'through', 'date', 'subject']))->delete();
                 $memo->tableRows()->whereIn('template_table_id', $template->tables->pluck('id'))->delete();
             } else {
-                // Serialize allocation within this transaction, including the first memo of the day.
                 $date = now();
+                $departmentCode = strtoupper(trim((string) ($user->department?->department_code ?: 'DEP')));
+                // Allocate a daily sequence inside the transaction so generated
+                // numbers remain unique while following the department/date format.
                 DB::table('memo_number_sequences')->insertOrIgnore([
                     'date' => $date->toDateString(),
                     'last_number' => 0,
@@ -226,7 +281,7 @@ class MemoController extends Controller
                 DB::table('memo_number_sequences')
                     ->where('date', $date->toDateString())
                     ->update(['last_number' => $number]);
-                $attributes['memo_number'] = 'MEMO/' . $date->format('Y/m/d') . '-' . str_pad((string) $number, 3, '0', STR_PAD_LEFT);
+                $attributes['memo_number'] = 'MEMO/' . $departmentCode . '/' . $date->format('Y/m/d') . '-' . str_pad((string) $number, 3, '0', STR_PAD_LEFT);
                 $memo = Memo::create($attributes);
             }
             if ($action === 'submit') {
@@ -358,36 +413,35 @@ class MemoController extends Controller
                 * Find active approval workflow for this template.
                 */
 
-                $workflow = \App\Models\ApprovalWorkflow::with([
-                    'steps'
-                ])
-                    ->where('template_id', $template->id)
-                    ->where('is_active', true)
-                    ->first();
-
-
-                /*
-                * No workflow configured.
-                */
-
-                if (!$workflow) {
-
-                    throw new \Exception(
-                        'No active approval workflow has been configured for this memo template.'
-                    );
+                // Keep this memo's workflow independent of future template edits.
+                $workflow = \App\Models\ApprovalWorkflow::create([
+                    'template_id' => $template->id,
+                    'workflow_name' => 'Workflow for '.$memo->memo_number,
+                    'approval_type' => $workflowConfig['approval_type'],
+                    'approval_rule' => $workflowConfig['approval_rule'],
+                    'minimum_approvals' => $workflowConfig['minimum_approvals'] ?? null,
+                    'is_active' => false,
+                ]);
+                foreach (array_values($workflowConfig['steps']) as $index => $step) {
+                    $workflow->steps()->create([
+                        'approver_id' => $step['approver_id'],
+                        'step_order' => $index + 1,
+                        'is_required' => true,
+                    ]);
                 }
-
-                // Submitting does not count as signing: the author must approve first.
+                $workflow->load('steps');
+                // The submitter's saved signature is applied automatically at submission.
+                $preparedSignature = $user->signature()->where('is_active', true)->first();
                 $memo->approvals()->create([
                     'workflow_id'      => $workflow->id,
                     'approver_id'      => $user->id,
                     'approval_step_id' => null,
                     'approval_role'    => 'prepared',
-                    'action'           => 'pending',
+                    'action'           => 'approved',
                     'comment'          => null,
-                    'signature_path'   => null,
-                    'approved_at'      => null,
-                    'approval_ip'      => null,
+                    'signature_path'   => $preparedSignature?->signature_path,
+                    'approved_at'      => now(),
+                    'approval_ip'      => request()->ip(),
                 ]);
 
 
@@ -468,6 +522,8 @@ class MemoController extends Controller
 
         if ($action === 'submit') {
 
+            app(\App\Services\MemoApprovalNotifier::class)->notifyReadyApprovers($memo);
+
             return redirect()
                 ->route('memos.my')
                 ->with(
@@ -487,12 +543,22 @@ class MemoController extends Controller
     public function myMemos(Request $request)
     {
         $user = Auth::user();
+        $isAdmin = in_array(strtolower((string) $user?->role?->role_name), ['admin', 'administrator'], true);
 
-        $query = Memo::with([
+        $baseQuery = Memo::query();
+        if (!$isAdmin) {
+            $baseQuery->where(function ($query) use ($user) {
+                $query->where('created_by', $user->id)
+                    ->orWhereHas('approvals', fn ($approvalQuery) => $approvalQuery
+                        ->where('approver_id', $user->id));
+            });
+        }
+
+        $query = (clone $baseQuery)->with([
             'template',
             'department',
-        ])
-        ->where('created_by', $user->id);
+            'creator',
+        ]);
 
         /*
         |--------------------------------------------------------------------------
@@ -537,11 +603,6 @@ class MemoController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $baseQuery = Memo::where(
-            'created_by',
-            $user->id
-        );
-
         $counts = [
 
             'all' => (clone $baseQuery)->count(),
@@ -574,7 +635,8 @@ class MemoController extends Controller
             'memos.my',
             compact(
                 'memos',
-                'counts'
+                'counts',
+                'isAdmin'
             )
         );
     }
@@ -632,8 +694,10 @@ class MemoController extends Controller
             'approvals.workflow',
         ])
         ->whereHas('approvals', function ($query) use ($user) {
-            $query->where('approver_id', $user->id);
-        });
+            $query->where('approver_id', $user->id)
+                ->where('approval_role', 'approval');
+        })
+        ->where('status', '!=', 'approved');
 
         // Search
         if ($request->filled('search')) {
@@ -652,30 +716,25 @@ class MemoController extends Controller
         ) {
             $query->whereHas('approvals', function ($q) use ($user, $request) {
                 $q->where('approver_id', $user->id)
+                ->where('approval_role', 'approval')
                 ->where('action', $request->status);
             });
         }
 
         // Counts for the approval tabs
-        $baseQuery = MemoApproval::where(
-            'approver_id',
-            $user->id
-        );
+        $baseQuery = Memo::where('status', '!=', 'approved')
+            ->whereHas('approvals', fn ($query) => $query
+                ->where('approver_id', $user->id)
+                ->where('approval_role', 'approval'));
 
         $counts = [
             'all' => (clone $baseQuery)->count(),
-
-            'pending' => (clone $baseQuery)
-                ->where('action', 'pending')
-                ->count(),
-
-            'approved' => (clone $baseQuery)
-                ->where('action', 'approved')
-                ->count(),
-
-            'rejected' => (clone $baseQuery)
-                ->where('action', 'rejected')
-                ->count(),
+            'pending' => (clone $baseQuery)->whereHas('approvals', fn ($query) => $query
+                ->where('approver_id', $user->id)->where('approval_role', 'approval')->where('action', 'pending'))->count(),
+            'approved' => (clone $baseQuery)->whereHas('approvals', fn ($query) => $query
+                ->where('approver_id', $user->id)->where('approval_role', 'approval')->where('action', 'approved'))->count(),
+            'rejected' => (clone $baseQuery)->whereHas('approvals', fn ($query) => $query
+                ->where('approver_id', $user->id)->where('approval_role', 'approval')->where('action', 'rejected'))->count(),
         ];
 
         $memos = $query
@@ -787,23 +846,24 @@ class MemoController extends Controller
                     return 'Memo ' . $memo->memo_number . ' has been rejected.';
                 }
 
-                $preparedApproval = $approvals->firstWhere('approval_role', 'prepared');
                 $workflowApprovals = $approvals->where('approval_role', '!=', 'prepared');
                 $workflowApprovedCount = $workflowApprovals->where('action', 'approved')->count()
                     + ($lockedApproval->approval_role === 'prepared' ? 0 : 1);
-                $preparedByApproved = $preparedApproval?->action === 'approved'
-                    || $lockedApproval->approval_role === 'prepared';
                 $workflowComplete = match ($workflow->approval_rule) {
                     'any' => $workflowApprovedCount >= 1,
                     'minimum' => $workflowApprovedCount >= (int) $workflow->minimum_approvals,
                     default => $workflowApprovedCount >= $workflowApprovals->count(),
                 };
-                $isComplete = $preparedByApproved && $workflowComplete;
+                $isComplete = $workflowComplete;
 
                 if ($isComplete) {
                     $memo->update(['status' => 'approved', 'completed_at' => now()]);
 
                     return 'Memo ' . $memo->memo_number . ' has been fully approved.';
+                }
+
+                if ($workflow->approval_type === 'sequential') {
+                    app(\App\Services\MemoApprovalNotifier::class)->notifyReadyApprovers($memo);
                 }
 
                 return 'Your approval has been recorded. The memo is moving to the next approval step.';

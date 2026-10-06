@@ -26,7 +26,6 @@
                     <div class="form-group"><label for="password">Password</label><div class="input-wrap"><svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input type="password" id="password" name="password" class="form-control password-input" placeholder="Enter your password" autocomplete="current-password" required><button class="toggle-password" type="button" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></div></div>
                     <button type="submit" class="login-button">Sign in <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
                 </form>
-                <p class="register-link">New to Memo? <a href="{{ route('register') }}">Create an account</a></p>
             </div>
             <p class="auth-footer">Memo Management System &middot; Your organization, connected.</p>
         </section>

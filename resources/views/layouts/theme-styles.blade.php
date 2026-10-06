@@ -6,8 +6,35 @@
     .auth-theme-toggle { position:absolute; top:18px; right:20px; }
     @media screen {
         html { color-scheme:light; }
+        /* Admin editors use dark defaults; provide their light-mode palette. */
+        html:not([data-theme=dark]) .sidebar-editor { --editor-panel:#f5f7fb; --editor-border:#dce2eb; --editor-text:#182438; --editor-muted:#59697f; }
+        html:not([data-theme=dark]) .sidebar-editor-card { background:#fff; }
+        html:not([data-theme=dark]) .menu-field { color:#334155; }
+        html:not([data-theme=dark]) :is(.menu-field input,.menu-field select,.role-access-select select) { background:#fff; border-color:#c8d2df; color:#182438; }
+        html:not([data-theme=dark]) .menu-drag-handle { color:#66758b; }
+        html:not([data-theme=dark]) .menu-group-children { border-color:#dce2eb; }
+        html:not([data-theme=dark]) .menu-drop-list.is-over { background:#edf6e3; border-color:#527b32; }
+        html:not([data-theme=dark]) :is(.menu-remove-button,.menu-restore-button) { background:#f5f7fb; border-color:#c8d2df; color:#334155; }
+        html:not([data-theme=dark]) :is(.menu-remove-button,.menu-restore-button):hover { background:#fff1f3; border-color:#d18c99; color:#a52b3c; }
+        html:not([data-theme=dark]) .role-access-note { background:#fff8e6; border-color:#e5cc8d; color:#745416; }
+        html:not([data-theme=dark]) .role-edit-page { --edit-bg:#fff; --edit-panel:#fff; --edit-border:#dce2eb; --edit-text:#182438; --edit-muted:#59697f; --edit-accent:#527b32; }
+        html:not([data-theme=dark]) .role-edit-card :is(input,select) { background:#f8fafc; border-color:#c8d2df; color:#182438; }
+        html:not([data-theme=dark]) :is(.sidebar-editor-notice,.role-edit-notice) { background:#edf8f0; border-color:#aad3b7; color:#24613c; }
+        html:not([data-theme=dark]) :is(.sidebar-editor-error,.role-edit-error) { background:#fff1f3; border-color:#edb7c1; color:#a52b3c; }
         html[data-theme=dark] { color-scheme:dark; --ui-ink:#e0e8f5; --ui-muted:#a3b1c7; --ui-line:#30405a; --ui-shadow:0 4px 16px #0002; --ink:#e0e8f5; --muted:#a3b1c7; --line:#30405a; }
         html[data-theme=dark] body { background:#101827; color:#e0e8f5; }
+        html[data-theme=dark] .registered-users { background:#19263b; color:#e0e8f5; border-color:#30405a; }
+        html[data-theme=dark] .registered-users th { background:#202f46; color:#b1bfd4; border-color:#30405a; }
+        html[data-theme=dark] .registered-users td { color:#bdcbe0; border-color:#30405a; }
+        html[data-theme=dark] .registered-users tbody tr:hover { background:#21324d; }
+        html[data-theme=dark] .registered-users > p { color:#a3b1c7; }
+        html[data-theme=dark] .registered-users-search label,
+        html[data-theme=dark] #registered-users-results > p { color:#a3b1c7; }
+        html[data-theme=dark] .registered-users-actions :is(a,button) { background:#22314a; color:#c1d2ed; border-color:#40516c; }
+        html[data-theme=dark] .registered-users-actions :is(a,button):not(:disabled):hover { background:#2c4576; color:#e1ebff; }
+        html[data-theme=dark] .admin-registration :is(.help-text,.signature-section p,.form-section-heading span) { color:#a3b1c7; }
+        html[data-theme=dark] .admin-registration .form-section-heading::after { background:#30405a; }
+        html[data-theme=dark] .admin-registration :is(.required,.error) { color:#ffb4bc; }
         html[data-theme=dark] .theme-toggle { background:#22314a; color:#f6d788; border-color:#40516c; }
         html[data-theme=dark] .theme-moon { display:none; }html[data-theme=dark] .theme-toggle .theme-sun { display:block; }
         html[data-theme=dark] .app-page-header { background:linear-gradient(115deg,#19263b,#1e304c) !important; border-color:#30405a !important; }

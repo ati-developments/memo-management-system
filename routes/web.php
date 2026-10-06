@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ApprovalWorkflowController;
+use App\Http\Controllers\AdminController;
 
 
 /*
@@ -16,12 +17,6 @@ use App\Http\Controllers\ApprovalWorkflowController;
 */
 
 Route::middleware('guest')->group(function () {
-
-    Route::get('/register', [AuthController::class, 'showRegister'])
-        ->name('register');
-
-    Route::post('/register', [AuthController::class, 'register'])
-        ->name('register.store');
 
     Route::get('/login', [AuthController::class, 'showLogin'])
         ->name('login');
@@ -51,75 +46,95 @@ Route::middleware('auth')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
+        ->middleware('menu:dashboard')->name('dashboard');
 
 
     // Memo creation
     Route::get('/memos/create', [MemoController::class, 'create'])
-        ->name('memos.create');
+        ->middleware('menu:new_memo')->name('memos.create');
 
     Route::get('/memos/templates', [MemoController::class, 'templates'])
-        ->name('memos.templates');
+        ->middleware('menu:new_memo')->name('memos.templates');
 
     Route::get('/memos/create/template/{template}', [MemoController::class, 'createFromTemplate'])
-        ->name('memos.create.template');
+        ->middleware('menu:new_memo')->name('memos.create.template');
 
     Route::get('/memos/create/blank', function () {
         return "Blank memo creation";
-    })->name('memos.create.blank');
+    })->middleware('menu:new_memo')->name('memos.create.blank');
 
     Route::post('/memos', [MemoController::class, 'store'])
-        ->name('memos.store');
+        ->middleware('menu:new_memo')->name('memos.store');
 
 
     // Templates
 
     Route::get('/templates', [TemplateController::class, 'index'])
-        ->name('templates.index');
+        ->middleware('menu:templates')->name('templates.index');
 
     Route::get('/templates/create', [TemplateController::class, 'create'])
-    ->name('templates.create');
+    ->middleware('menu:templates')->name('templates.create');
 
     Route::post('/templates', [TemplateController::class, 'store'])
-    ->name('templates.store');
+    ->middleware('menu:templates')->name('templates.store');
 
     Route::get('/templates/{template}/edit', [TemplateController::class, 'edit'])
-    ->name('templates.edit');
+    ->middleware('menu:templates')->name('templates.edit');
 
     Route::post('/templates/{template}/fields', [TemplateController::class, 'storeFields'])
-    ->name('templates.fields.store');
+    ->middleware('menu:templates')->name('templates.fields.store');
 
     Route::post('/templates/{template}/tables', [TemplateController::class, 'storeTables'])
-    ->name('templates.tables.store');
+    ->middleware('menu:templates')->name('templates.tables.store');
 
     Route::get(
     '/templates/{template}/approval-workflow', [ApprovalWorkflowController::class, 'edit']
-            )->name('templates.approval-workflow.edit');
+            )->middleware('menu:templates')->name('templates.approval-workflow.edit');
 
     Route::post('/templates/{template}/approval-workflow',[ApprovalWorkflowController::class, 'update']
-            )->name('templates.approval-workflow.update');
+            )->middleware('menu:templates')->name('templates.approval-workflow.update');
 
     Route::get('/memos/my',[MemoController::class, 'myMemos']
-            )->name('memos.my');
+            )->middleware('menu:memos')->name('memos.my');
 
     Route::get('/memos/all', [MemoController::class, 'allMemos'])
-        ->name('memos.all');
+        ->middleware('admin')->name('memos.all');
 
     Route::get('/approvals', [MemoController::class, 'approvals'])
-        ->name('approvals.index');
+        ->middleware('menu:approvals')->name('approvals.index');
 
     Route::get('/approvals/{approval}', [MemoController::class, 'reviewApproval'])
-        ->name('approvals.review');
+        ->middleware('menu:approvals')->name('approvals.review');
 
     Route::post('/approvals/{approval}/decision', [MemoController::class, 'recordApprovalDecision'])
-        ->name('approvals.decision');
+        ->middleware('menu:approvals')->name('approvals.decision');
 
     Route::get('/memos/new', [MemoController::class, 'new'])
-        ->name('memos.new');
+        ->middleware('menu:new_memo')->name('memos.new');
 
     Route::get('/memos/{memo}', [\App\Http\Controllers\MemoDocumentController::class, 'show'])->name('memos.show');
     Route::get('/memos/{memo}/pdf', [\App\Http\Controllers\MemoDocumentController::class, 'pdf'])->name('memos.pdf');
     Route::get('/memos/{memo}/attachments/{attachment}', [\App\Http\Controllers\MemoDocumentController::class, 'downloadAttachment'])->name('memos.attachments.download');
     Route::get('/memos/{memo}/edit', [\App\Http\Controllers\MemoDocumentController::class, 'edit'])->name('memos.edit');
     Route::put('/memos/{memo}', [\App\Http\Controllers\MemoDocumentController::class, 'update'])->name('memos.update');
+});
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/users', [AdminController::class, 'users'])->name('users.index');
+    Route::delete('/memos/{memo}', [\App\Http\Controllers\MemoDocumentController::class, 'destroy'])->name('memos.destroy');
+    Route::get('/users/create', [AdminController::class, 'createUser'])->name('users.create');
+    Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
+    Route::get('/users/{user}/edit', [AdminController::class, 'editUser'])->name('users.edit');
+    Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
+    Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
+    Route::get('/access-menu', [AdminController::class, 'accessMenu'])->name('access-menu');
+    Route::put('/access-menu', [AdminController::class, 'updateAccessMenu'])->name('access-menu.update');
+    Route::put('/access-menu/sidebar', [AdminController::class, 'updateSidebarMenu'])->name('access-menu.sidebar.update');
+    Route::post('/access-menu/items', [AdminController::class, 'storeSidebarMenuItem'])->name('access-menu.items.store');
+    Route::post('/access-menu/items/{item}/restore', [AdminController::class, 'restoreSidebarMenuItem'])->name('access-menu.items.restore');
+    Route::put('/access-menu/role-access', [AdminController::class, 'updateRoleMenuAccess'])->name('access-menu.role-access.update');
+    Route::get('/roles', [AdminController::class, 'roles'])->name('roles.index');
+    Route::post('/roles', [AdminController::class, 'storeRole'])->name('roles.store');
+    Route::put('/roles/{role}', [AdminController::class, 'updateRole'])->name('roles.update');
+    Route::put('/memo-status-labels', [AdminController::class, 'updateMemoStatusLabels'])->name('memo-status-labels.update');
 });

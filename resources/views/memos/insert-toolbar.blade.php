@@ -232,6 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 (rows.length ? rows : [{}]).forEach(addRow);
             }
     };
-    Object.values(@json(old('inserted_items', []))).forEach(insertItem);
+    Object.values(@json(old('inserted_items', $memo->inserted_items ?? []))).forEach(insertItem);
 });
 </script>

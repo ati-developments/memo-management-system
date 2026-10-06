@@ -49,6 +49,7 @@ class User extends Authenticatable
         'role_id',
         'employee_id',
         'designation',
+        'menu_access',
     ];
 
     /**
@@ -71,6 +72,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'menu_access' => 'array',
         ];
     }
 }

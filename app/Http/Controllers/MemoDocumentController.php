@@ -14,12 +14,14 @@ class MemoDocumentController extends Controller
     // The authenticated organization-wide register already exposes all memos.
     public function show(Memo $memo)
     {
+        $this->authorizeView($memo);
         $memo->load('attachments');
         return view('memos.show', compact('memo'));
     }
 
     public function downloadAttachment(Memo $memo, MemoAttachment $attachment)
     {
+        $this->authorizeView($memo);
         abort_unless((int) $attachment->memo_id === (int) $memo->id, 404);
         abort_unless(Storage::disk('local')->exists($attachment->storage_path), 404);
 
@@ -28,6 +30,7 @@ class MemoDocumentController extends Controller
 
     public function pdf(Request $request, Memo $memo)
     {
+        $this->authorizeView($memo);
         $memo->load(['department', 'creator', 'fieldValues.templateField', 'tableRows.templateTable.columns', 'approvals.approver', 'approvals.approvalStep', 'attachments']);
         $values = $memo->fieldValues->pluck('field_value', 'field_name');
         $approvals = $memo->approvals->sortBy('chain_order');
@@ -73,7 +76,9 @@ class MemoDocumentController extends Controller
         abort_unless($memo->template, 422, 'This memo no longer has a template.');
         $values = $memo->fieldValues->pluck('field_value', 'field_name');
 
-        return view('memos.edit', compact('memo', 'values'));
+        $approvalWorkflow = \App\Models\ApprovalWorkflow::with('steps.approver')->where('template_id', $memo->template_id)->where('is_active', true)->first();
+        $workflowUsers = \App\Models\User::orderBy('name')->get(['id', 'name', 'designation']);
+        return view('memos.edit', compact('memo', 'values', 'approvalWorkflow', 'workflowUsers'));
     }
 
     public function update(Request $request, Memo $memo)
@@ -83,9 +88,40 @@ class MemoDocumentController extends Controller
         return app(MemoController::class)->saveMemo($request, $memo);
     }
 
+    public function destroy(Memo $memo)
+    {
+        $attachmentPaths = $memo->attachments()->pluck('storage_path');
+        $signaturePaths = $memo->approvals()->pluck('signature_path')->filter();
+
+        foreach ($attachmentPaths as $path) {
+            Storage::disk('local')->delete($path);
+        }
+        foreach ($signaturePaths as $path) {
+            Storage::disk('public')->delete($path);
+        }
+
+        $memo->delete();
+
+        return to_route('memos.my')->with('success', 'Memo ' . $memo->memo_number . ' deleted.');
+    }
+
     private function authorizeEdit(Memo $memo): void
     {
+        $isAdmin = in_array(strtolower((string) auth()->user()?->role?->role_name), ['admin', 'administrator'], true);
+        if ($isAdmin) {
+            return;
+        }
         abort_unless((int) $memo->created_by === (int) auth()->id(), 403);
         abort_unless($memo->status === 'draft', 403, 'Only draft memos can be edited.');
+    }
+
+    private function authorizeView(Memo $memo): void
+    {
+        $user = auth()->user();
+        $isAdmin = in_array(strtolower((string) $user?->role?->role_name), ['admin', 'administrator'], true);
+        $isCreator = (int) $memo->created_by === (int) $user?->id;
+        $isApprover = $memo->approvals()->where('approver_id', $user?->id)->exists();
+
+        abort_unless($isAdmin || $isCreator || $isApprover, 403);
     }
 }

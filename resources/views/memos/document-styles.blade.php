@@ -1,8 +1,12 @@
-.memo-document { font-family: DejaVu Sans, sans-serif; font-size: 9pt; color: #111; line-height: 1.4; }
+.memo-document { font-family: "Times New Roman", Times, serif; font-size: 9pt; color: #111; line-height: 1.4; }
+.memo-document, .memo-document * { font-family: "Times New Roman", Times, serif !important; }
     .memo-document table { width: 100%; border-collapse: collapse; }
-    .memo-document .letterhead td { vertical-align: top; padding-bottom: 16pt; }
-    .memo-document h1 { margin: 0; font-size: 27pt; color: #595959; }
-    .memo-document .department { font-size: 11pt; font-weight: bold; color: #808080; }
+    .memo-document .letterhead { margin: 0 0 2pt; }
+    .memo-document .letterhead td { vertical-align: top; padding: 0 0 12pt; }
+    .memo-document .letterhead td:first-child { width: 58%; }
+    .memo-document .letterhead td:last-child { width: 42%; }
+    .memo-document h1 { margin: 0; font-size: 27pt; line-height: 1.1; color: #595959; }
+    .memo-document .department { margin-top: 5pt; font-size: 11pt; font-weight: bold; color: #808080; }
     .memo-document .brand { text-align: right; color: #626e79; font-size: 22pt; font-weight: bold; }
     .memo-document .brand small { display: block; font-size: 7pt; }
     .memo-document .brand img { width: 140pt; height: auto; }
@@ -10,7 +14,7 @@
     .memo-document .metadata td { width: 48%; vertical-align: top; }
     .memo-document .metadata .gap { width: 4%; }
     .memo-document .box { border: 1px solid #111; }
-    .memo-document .label { background: #d0cece; padding: 3pt 5pt; font-size: 8pt; border-bottom: 1px solid #111; }
+    .memo-document .label { background: #d0cece; padding: 3pt 5pt; border-bottom: 1px solid #111; font-weight: bold; }
     .memo-document .value { padding: 4pt 5pt; min-height: 13pt; white-space: pre-line; overflow-wrap: break-word; }
     .memo-document .subject { margin: 6pt 0 20pt; }
     .memo-document .subject td,
@@ -20,10 +24,11 @@
     .memo-document .subject .caption { width: 15%; background: #d0cece; }
     .memo-document .fields { margin-bottom: 0; }
     .memo-document .fields .caption { width: 33%; text-align: center; background: #d0cece; font-weight: bold; }
+    .memo-document .fields + .fields { margin-top: -1px; }
     .memo-document .prose-label { width: 33%; box-sizing: border-box; background: #d0cece; border: 1px solid #111; padding: 4pt; text-align: center; font-weight: bold; margin-top: 12pt; }
     .memo-document .prose { border: 1px solid #111; padding: 6pt; white-space: pre-line; overflow-wrap: break-word; margin: 0; }
-    .memo-document .charges { margin: 20pt 0; table-layout: fixed; font-size: 8pt; }
-    .memo-document .charges th { background: #d0cece; text-align: left; }
+    .memo-document .charges { margin: 20pt 0; table-layout: fixed; }
+    .memo-document .charges th { background: #d0cece; text-align: left; font-weight: bold; }
     .memo-document .charges td { white-space: pre-line; overflow-wrap: break-word; }
     .memo-document thead { display: table-header-group; }
     .memo-document tr { page-break-inside: avoid; }

@@ -10,6 +10,131 @@ class MemoDocumentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_approval_emails_follow_workflow_order_and_stop_after_completion(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        $memo = $this->draft();
+        $role = \App\Models\Role::create(['role_name' => 'Approver', 'status' => true]);
+        $first = User::factory()->create(['username' => 'email-first', 'role_id' => $role->id]);
+        $second = User::factory()->create(['username' => 'email-second', 'role_id' => $role->id]);
+        $this->put(route('memos.update', $memo), [
+            'subject' => 'Email approval test', 'action' => 'submit',
+            'workflow_config' => ['approval_type' => 'sequential', 'approval_rule' => 'all',
+                'steps' => [['approver_id' => $first->id], ['approver_id' => $second->id]]],
+        ])->assertSessionHasNoErrors();
+        $notification = \App\Notifications\MemoApprovalRequested::class;
+        \Illuminate\Support\Facades\Notification::assertSentTo($first, $notification, function ($mail) use ($first, $memo) {
+            $this->assertTrue($mail->afterCommit);
+            $this->assertTrue($mail->shouldSend($first, 'mail'));
+            $this->assertSame(route('approvals.review', $mail->approval), $mail->toMail($first)->actionUrl);
+            return $mail->approval->memo_id === $memo->id;
+        });
+        \Illuminate\Support\Facades\Notification::assertNotSentTo($second, $notification);
+        $approval = $memo->approvals()->where('approver_id', $first->id)->first();
+        $this->actingAs($first)->post(route('approvals.decision', $approval), ['decision' => 'approved'])
+            ->assertSessionHasNoErrors();
+        \Illuminate\Support\Facades\Notification::assertSentToTimes($second, $notification, 1);
+        $this->post(route('approvals.decision', $approval), ['decision' => 'approved']);
+        \Illuminate\Support\Facades\Notification::assertSentToTimes($second, $notification, 1);
+
+        $memo->update(['status' => 'rejected']);
+        $pending = $memo->approvals()->where('approver_id', $second->id)->first();
+        $this->assertFalse((new $notification($pending))->shouldSend($second, 'mail'));
+
+        \Illuminate\Support\Facades\Notification::fake();
+        $memo->update(['status' => 'draft']);
+        app(\App\Services\MemoApprovalNotifier::class)->notifyReadyApprovers($memo);
+        \Illuminate\Support\Facades\Notification::assertNothingSent();
+        $memo->update(['status' => 'pending']);
+        $approval->refresh()->update(['action' => 'pending']);
+        $approval->workflow->update(['approval_type' => 'open']);
+        app(\App\Services\MemoApprovalNotifier::class)->notifyReadyApprovers($memo);
+        \Illuminate\Support\Facades\Notification::assertSentTo($first, $notification);
+        \Illuminate\Support\Facades\Notification::assertSentTo($second, $notification);
+    }
+
+    public function test_memos_list_includes_each_assigned_approver_and_keeps_filters_scoped(): void
+    {
+        $memo = $this->draft();
+        $creator = $memo->creator;
+        $first = User::factory()->create(['username' => 'list-first', 'menu_access' => ['memos']]);
+        $second = User::factory()->create(['username' => 'list-second', 'menu_access' => ['memos']]);
+        $role = \App\Models\Role::create(['role_name' => 'Staff', 'status' => true]);
+        foreach ([$creator, $first, $second] as $approver) {
+            $approver->update(['role_id' => $role->id]);
+            $memo->approvals()->create([
+                'approver_id' => $approver->id, 'approval_role' => 'approval', 'action' => 'pending',
+            ]);
+        }
+        $unrelated = $memo->replicate();
+        $unrelated->memo_number = 'UNRELATED-MEMO';
+        $unrelated->save();
+
+        foreach (['pending', 'approved', 'rejected'] as $status) {
+            $memo->update(['status' => $status]);
+            foreach ([$first, $second] as $approver) {
+                $this->actingAs($approver)->get(route('memos.my'))
+                    ->assertOk()
+                    ->assertViewHas('memos', fn ($memos) => $memos->pluck('id')->all() === [$memo->id])
+                    ->assertViewHas('counts', fn ($counts) => $counts['all'] === 1 && $counts[$status] === 1);
+                $this->get(route('memos.show', $memo))->assertOk();
+                $this->get(route('memos.my', ['status' => 'draft']))
+                    ->assertOk()->assertViewHas('memos', fn ($memos) => $memos->isEmpty());
+                $this->get(route('memos.my', ['search' => 'UNRELATED-MEMO']))
+                    ->assertOk()->assertViewHas('memos', fn ($memos) => $memos->isEmpty());
+                $this->get(route('memos.show', $unrelated))->assertForbidden();
+            }
+        }
+
+        $this->actingAs($creator)->get(route('memos.my'))->assertOk()
+            ->assertViewHas('memos', fn ($memos) => $memos->total() === 2);
+    }
+
+    public function test_memo_workflow_is_saved_with_draft_and_submission_without_changing_template(): void
+    {
+        $memo = $this->draft();
+        $original = User::factory()->create(['username' => 'original-approver']);
+        $replacement = User::factory()->create(['username' => 'replacement-approver']);
+        $workflow = ApprovalWorkflow::create(['template_id' => $memo->template_id, 'workflow_name' => 'Permanent workflow', 'approval_type' => 'sequential', 'approval_rule' => 'all', 'is_active' => true]);
+        $step = $workflow->steps()->create(['approver_id' => $original->id, 'step_order' => 1, 'is_required' => true]);
+        $this->get(route('memos.create.template', $memo->template))->assertOk()->assertSee('Approval Workflow')->assertSee('data-workflow-reset', false);
+        $config = ['approval_type' => 'open', 'approval_rule' => 'minimum', 'minimum_approvals' => 1,
+            'steps' => [['approver_id' => $replacement->id], ['approver_id' => $original->id]]];
+        $this->put(route('memos.update', $memo), ['subject' => 'Custom workflow', 'action' => 'draft', 'workflow_config' => $config])->assertSessionHasNoErrors();
+        $this->assertSame($config, $memo->fresh()->workflow_config);
+        $this->assertSame(0, $memo->approvals()->count());
+        $this->get(route('memos.edit', $memo))->assertOk()->assertSee('data-workflow-steps', false);
+        $this->put(route('memos.update', $memo), ['subject' => 'Custom workflow', 'action' => 'submit'])->assertSessionHasNoErrors();
+        $assigned = $memo->approvals()->where('approval_role', 'approval')->with('approvalStep')->get()->sortBy('chain_order');
+        $this->assertSame([$replacement->id, $original->id], $assigned->pluck('approver_id')->all());
+        $snapshot = $assigned->first()->workflow;
+        $this->assertNotSame($workflow->id, $snapshot->id);
+        $this->assertFalse($snapshot->is_active);
+        $this->assertSame('open', $snapshot->approval_type);
+        $this->assertSame('minimum', $snapshot->approval_rule);
+        $this->assertSame('sequential', $workflow->fresh()->approval_type);
+        $this->assertSame($original->id, $step->fresh()->approver_id);
+        $workflow->update(['approval_rule' => 'any']);
+        $step->update(['approver_id' => $replacement->id]);
+        $this->assertSame('minimum', $snapshot->fresh()->approval_rule);
+        $this->assertSame([$replacement->id, $original->id], $snapshot->steps()->pluck('approver_id')->all());
+    }
+
+    public function test_memo_workflow_rejects_invalid_approvers_and_minimum(): void
+    {
+        $memo = $this->draft();
+        $config = ['approval_type' => 'open', 'approval_rule' => 'minimum', 'minimum_approvals' => 2,
+            'steps' => [['approver_id' => $memo->created_by]]];
+        $payload = ['subject' => 'Invalid workflow', 'action' => 'submit', 'workflow_config' => $config];
+        $this->put(route('memos.update', $memo), $payload)->assertSessionHasErrors('workflow_config.minimum_approvals');
+        $payload['workflow_config']['steps'][] = ['approver_id' => $memo->created_by];
+        $this->put(route('memos.update', $memo), $payload)->assertSessionHasErrors('workflow_config.steps.0.approver_id');
+        $payload['workflow_config']['steps'] = [['approver_id' => 999999]];
+        $this->put(route('memos.update', $memo), $payload)->assertSessionHasErrors('workflow_config.steps.0.approver_id');
+        $this->assertSame('draft', $memo->fresh()->status);
+        $this->assertSame(0, $memo->approvals()->count());
+    }
+
     public function test_table_cell_formatting_survives_save_edit_and_document_rendering(): void
     {
         $memo = $this->draft();

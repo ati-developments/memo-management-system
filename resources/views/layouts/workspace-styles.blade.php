@@ -15,6 +15,11 @@
     .app .brand-name { font-family:inherit; font-size:20px; letter-spacing:-.6px; }
     .app .brand-subtitle { font-size:10px; letter-spacing:.3px; color:#9eacc5; margin-top:5px; }
     .app .nav { padding:24px 14px; }
+    .app .nav-group { margin:8px 0 12px; }
+    .app .nav-subitems { margin-left:10px; padding-left:8px; border-left:1px solid #ffffff18; }
+    .app .nav-group-toggle { width:100%; background:transparent; text-align:left; cursor:pointer; font-family:inherit; }
+    .app .nav-group-toggle:hover { background:#ffffff09; color:#fff; }
+    .app .nav-expand-arrow { margin-left:auto; font-size:18px; line-height:1; }
     .app .nav-item { min-height:46px; padding:12px 14px; gap:12px; font-size:13px; font-weight:550; border:1px solid transparent; border-radius:10px; color:#b6c2d8; }
     .app .nav-item:hover { background:#ffffff09; color:#fff; transform:translateX(2px); }
     .app .nav-item.active { background:#315fe921; border-color:#7296ff30; color:#dce7ff; box-shadow:inset 3px 0 #7296ff; }
@@ -85,6 +90,7 @@
     @media(max-width:700px) {
         .app .sidebar { width:70px; }.app .brand { min-height:78px; padding:0 5px; }.app .brand-logo { margin:0; }
         .app .nav { padding:18px 8px; }.app .nav-item { justify-content:center; padding:12px; }.app .nav-item:hover { transform:none; }
+        .app .nav-subitems { margin-left:0; padding-left:0; border-left:0; }
         .app .user-area { padding:16px; }.app .user-area > div:last-child { display:none; }.app .logout-form { padding:0 8px 16px; }
         .app .app-page-header { padding:18px 20px; }
         .app .app-header-row { gap:12px; }.app > .main > .content { padding:20px 16px 36px; }

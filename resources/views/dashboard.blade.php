@@ -78,9 +78,9 @@
     $hour = now()->hour;
     $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
     $stats = [
-        ['label' => 'My memos', 'value' => $myMemos, 'description' => 'Total memos you have created', 'class' => '', 'icon' => 'document', 'url' => route('memos.my')],
+        ['label' => 'Memos', 'value' => $myMemos, 'description' => 'Total memos you have created', 'class' => '', 'icon' => 'document', 'url' => route('memos.my')],
         ['label' => 'Pending approval', 'value' => $pendingApproval, 'description' => 'Your memos awaiting approval', 'class' => 'amber', 'icon' => 'clock', 'url' => route('memos.my', ['status' => 'pending'])],
-        ['label' => 'Approved', 'value' => $approved, 'description' => 'Your approved memos', 'class' => 'green', 'icon' => 'check', 'url' => route('memos.my', ['status' => 'approved'])],
+        ['label' => $memoStatusLabels['approved'] ?? 'Approved', 'value' => $approved, 'description' => 'Your ' . strtolower($memoStatusLabels['approved'] ?? 'approved') . ' memos', 'class' => 'green', 'icon' => 'check', 'url' => route('memos.my', ['status' => 'approved'])],
         ['label' => 'Needs my action', 'value' => $needsMyAction, 'description' => 'Assigned to you for review', 'class' => 'action', 'icon' => 'review', 'url' => route('approvals.index')],
     ];
 @endphp
@@ -109,7 +109,7 @@
                 <a class="dash-memo" href="{{ route('memos.show', $memo) }}">
                     <span class="dash-icon">@include('dashboard.icon', ['icon' => 'document'])</span>
                     <div class="dash-memo-copy"><span class="dash-memo-title">{{ $memo->subject }}</span><div class="dash-meta"><span>{{ $memo->memo_number }}</span><span>{{ $memo->created_at->format('M j, Y') }}</span></div></div>
-                    <span class="dash-status {{ in_array($memo->status, ['pending', 'approved', 'rejected', 'draft']) ? $memo->status : '' }}">{{ ucfirst($memo->status) }}</span>
+                    <span class="dash-status {{ in_array($memo->status, ['pending', 'approved', 'rejected', 'draft']) ? $memo->status : '' }}">{{ $memoStatusLabels[$memo->status] ?? ucfirst($memo->status) }}</span>
                 </a>
             @empty
                 <div class="dash-empty"><span class="dash-icon">@include('dashboard.icon', ['icon' => 'document'])</span><h3>Your workspace starts here</h3><p>Create your first memo to start tracking its progress and approvals.</p><a class="dash-link" href="{{ route('memos.new') }}">Create a memo &rarr;</a></div>
@@ -134,7 +134,7 @@
         <div class="dash-shortcut-grid">
             <a class="dash-shortcut" href="{{ route('templates.index') }}"><span class="dash-icon">@include('dashboard.icon', ['icon' => 'grid'])</span><span><strong>Browse templates</strong><small>Find a starting point for your memo</small></span><span class="dash-arrow" aria-hidden="true">&rarr;</span></a>
             <a class="dash-shortcut" href="{{ route('memos.my', ['status' => 'draft']) }}"><span class="dash-icon">@include('dashboard.icon', ['icon' => 'document'])</span><span><strong>Continue a draft</strong><small>Pick up where you left off</small></span><span class="dash-arrow" aria-hidden="true">&rarr;</span></a>
-            <a class="dash-shortcut" href="{{ route('memos.all') }}"><span class="dash-icon">@include('dashboard.icon', ['icon' => 'review'])</span><span><strong>All memos</strong><small>Explore your organization's memos</small></span><span class="dash-arrow" aria-hidden="true">&rarr;</span></a>
+            @if(in_array(strtolower((string) auth()->user()?->role?->role_name), ['admin', 'administrator'], true))<a class="dash-shortcut" href="{{ route('memos.all') }}"><span class="dash-icon">@include('dashboard.icon', ['icon' => 'review'])</span><span><strong>All memos</strong><small>Explore your organization's memos</small></span><span class="dash-arrow" aria-hidden="true">&rarr;</span></a>@endif
         </div>
     </section>
 </div>

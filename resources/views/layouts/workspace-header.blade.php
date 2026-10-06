@@ -15,10 +15,10 @@
         </div>
     </div>
     <nav class="workspace-tools" aria-label="Account controls">
-        <a class="workspace-tool" href="{{ route('approvals.index') }}" aria-label="Pending approvals: {{ $needsMyAction }}" title="Pending approvals">
+        <!-- <a class="workspace-tool" href="{{ route('approvals.index') }}" aria-label="Pending approvals: {{ $needsMyAction }}" title="Pending approvals">
             @include('dashboard.icon', ['icon' => 'review'])
             <span class="workspace-notification">{{ $needsMyAction }}</span>
-        </a>
+        </a> -->
         @include('layouts.theme-toggle')
         @include('layouts.profile-link')
     </nav>

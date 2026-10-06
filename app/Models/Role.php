@@ -11,7 +11,10 @@ class Role extends Model
         'role_name',
         'description',
         'status',
+        'menu_access',
     ];
+
+    protected $casts = ['menu_access' => 'array'];
 
     public function users(): HasMany
     {

@@ -49,7 +49,11 @@ Memo approvals
 
     @if(session('success'))<div class="alert success" role="status">{{ session('success') }}</div>@endif
     @if(session('error'))<div class="alert error" role="alert">{{ session('error') }}</div>@endif
-    <div class="approval-tools"><nav class="approval-tabs" aria-label="Filter approvals by status">@foreach(['all' => 'All', 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'] as $value => $label)<a href="{{ route('approvals.index', array_filter(['status' => $value === 'all' ? null : $value, 'search' => request('search')])) }}" class="approval-tab {{ request('status', 'all') === $value ? 'active' : '' }}">{{ $label }} <span class="tab-count">{{ $counts[$value] }}</span></a>@endforeach</nav><form method="GET" action="{{ route('approvals.index') }}" class="approval-search">@if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif<input type="search" name="search" value="{{ request('search') }}" placeholder="Search memo number or subject" aria-label="Search approvals"></form></div>
+    <div class="approval-tools">
+            <form method="GET" action="{{ route('approvals.index') }}" class="approval-search">
+                <input type="search" name="search" value="{{ request('search') }}" placeholder="Search memo number or subject" aria-label="Search approvals">
+            </form>
+        </div>
     <section class="approval-register"><header class="register-heading"><h2>Approval register</h2><span>{{ $memos->total() }} {{ Str::plural('request', $memos->total()) }}</span></header>
         @if($memos->isNotEmpty())
             <div class="table-scroll"><table class="approval-table"><thead><tr><th>Memo</th><th>Submitted by</th><th>Submitted</th><th>Your status</th><th>Workflow progress</th><th>Your step</th><th>Action</th></tr></thead><tbody>

@@ -1,4 +1,11 @@
 <style>
+    .app { --workspace-gutter:20px; }
+    @media screen {
+        .app > .main > .content { width:100%; max-width:none; margin-inline:0; padding-inline:var(--workspace-gutter); }
+        .app > .main > .content :is(.dash,.access-menu-page,.my-memos-page,.new-memo-page,.memo-editor,.memo-review,.memo-details-page) { max-width:none; margin-inline:0; }
+        .app .workspace-topbar { margin-inline:var(--workspace-gutter); }
+    }
+    @media screen and (max-width:700px) { .app { --workspace-gutter:8px; } }
     .workspace-page-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
     .workspace-page-heading-copy { display:flex; align-items:center; gap:16px; flex-wrap:wrap; min-width:0; }
     .workspace-page-heading h1 { margin:0; font-size:22px; font-weight:650; line-height:1.3; letter-spacing:0; color:var(--ui-ink); overflow-wrap:anywhere; }

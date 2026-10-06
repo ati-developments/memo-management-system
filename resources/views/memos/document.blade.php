@@ -1,5 +1,5 @@
 <table class="letterhead"><tr><td><h1>MEMO</h1><div class="department">{{ $memo->department?->department_name }}</div></td><td class="brand">@if($brandImage ?? null)<img src="{{ $brandImage }}" alt="Amana Takaful Insurance">@else AMANA<small>TAKAFUL INSURANCE</small>@endif</td></tr></table>
-<p class="reference">{{ $memo->memo_number }} &middot; {{ ucfirst($memo->status) }}</p>
+<p class="reference">{{ $memo->memo_number }} &middot; {{ $memoStatusLabels[$memo->status] ?? ucfirst($memo->status) }}</p>
 @include('memos.text-blocks', ['position' => 'start'])
 <table class="metadata">
     <tr><td><div class="box"><div class="label">To</div><div class="value">{{ $values->get('to') ?: '—' }}</div></div></td><td class="gap"></td><td><div class="box"><div class="label">From</div><div class="value">{{ $values->get('from') ?: $memo->creator?->name }}</div></div></td></tr>

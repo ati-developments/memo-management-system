@@ -21,6 +21,7 @@ class Memo extends Model
         'text_blocks',
         'inserted_items',
         'table_formats',
+        'workflow_config',
         'submitted_at',
         'completed_at',
     ];
@@ -29,6 +30,7 @@ class Memo extends Model
         'text_blocks' => 'array',
         'inserted_items' => 'array',
         'table_formats' => 'array',
+        'workflow_config' => 'array',
         'submitted_at' => 'datetime',
         'completed_at' => 'datetime',
     ];

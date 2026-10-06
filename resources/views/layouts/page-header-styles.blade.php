@@ -10,7 +10,7 @@
     .profile-link:focus-visible { outline:3px solid #82aaff; outline-offset:3px; }
     @media print { .profile-link { display:none !important; } }
     .app > .main { margin-left:242px; width:calc(100% - 242px); min-width:0; padding:0; }
-    .app > .main > .content { max-width:1440px; margin:0 auto; padding:28px clamp(20px,4vw,64px) 48px; }
+    .app > .main > .content { max-width:none; margin:0; padding:28px 20px 48px; }
     .app-page-header { width:100%; margin:0; background:#202b4d; color:#fff; padding:30px 40px 34px; }
     .app-page-header-inner { position:relative; width:100%; max-width:none; margin:0; }
     .app-header-row { display:flex; align-items:center; justify-content:space-between; gap:24px; }

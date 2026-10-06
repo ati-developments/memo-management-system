@@ -38,7 +38,8 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:127'],
+            'last_name' => ['required', 'string', 'max:127'],
 
             'username' => [
                 'required',
@@ -84,9 +85,9 @@ class AuthController extends Controller
                 'confirmed'
             ],
 
-            // Signature is OPTIONAL
+            // A signature is required for registration.
             'signature' => [
-                'nullable',
+                'required',
                 'image',
                 'mimes:png,jpg,jpeg',
                 'max:2048'
@@ -95,7 +96,7 @@ class AuthController extends Controller
 
 
         $user = User::create([
-            'name' => $validated['name'],
+            'name' => trim($validated['first_name']).' '.trim($validated['last_name']),
             'username' => $validated['username'],
             'email' => $validated['email'],
             'employee_id' => $validated['employee_id'],
@@ -108,7 +109,7 @@ class AuthController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Optional Signature
+        | Signature
         |--------------------------------------------------------------------------
         */
 

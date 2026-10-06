@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'My Memos')
+@section('title', 'Memos')
 
 @section('content')
 
@@ -11,10 +11,10 @@
     ========================================================== --}}
 
     @section('header-title')
-My Memos
+                Memos
 @endsection
 @section('header-description')
-View and manage the memos you have created.
+{{ $isAdmin ? 'View and manage all memos across the organization.' : 'View memos you have prepared or are assigned to approve.' }}
 @endsection
 @section('header-eyebrow')
 Document management
@@ -48,7 +48,7 @@ Document management
                 href="{{ route('memos.my', ['status' => 'pending']) }}"
                 class="status-filter {{ request('status') === 'pending' ? 'active' : '' }}"
             >
-                <span>Pending</span>
+                <span>{{ $memoStatusLabels['pending'] ?? 'Pending' }}</span>
                 <span class="filter-count">
                     {{ $counts['pending'] }}
                 </span>
@@ -59,7 +59,7 @@ Document management
                 href="{{ route('memos.my', ['status' => 'approved']) }}"
                 class="status-filter {{ request('status') === 'approved' ? 'active' : '' }}"
             >
-                <span>Approved</span>
+                <span>{{ $memoStatusLabels['approved'] ?? 'Approved' }}</span>
                 <span class="filter-count">
                     {{ $counts['approved'] }}
                 </span>
@@ -70,7 +70,7 @@ Document management
                 href="{{ route('memos.my', ['status' => 'draft']) }}"
                 class="status-filter {{ request('status') === 'draft' ? 'active' : '' }}"
             >
-                <span>Draft</span>
+                <span>{{ $memoStatusLabels['draft'] ?? 'Draft' }}</span>
                 <span class="filter-count">
                     {{ $counts['draft'] }}
                 </span>
@@ -152,8 +152,8 @@ Document management
                     Memo Records
                 </h2>
 
-                <p>
-                    Your submitted and draft memos
+                    <p>
+                    {{ $isAdmin ? 'All memos across the organization' : 'Memos you have prepared or are assigned to approve' }}
                 </p>
 
             </div>
@@ -325,7 +325,7 @@ Document management
                                         <div class="status-wrapper">
 
                                             <span class="status-badge pending">
-                                                Pending
+                                                {{ $memoStatusLabels['pending'] ?? 'Pending' }}
                                             </span>
 
                                         </div>
@@ -335,7 +335,7 @@ Document management
                                         <div class="status-wrapper">
 
                                             <span class="status-badge approved">
-                                                Approved
+                                                {{ $memoStatusLabels['approved'] ?? 'Approved' }}
                                             </span>
 
                                         </div>
@@ -355,7 +355,7 @@ Document management
                                         <div class="status-wrapper">
 
                                             <span class="status-badge draft">
-                                                Draft
+                                                {{ $memoStatusLabels['draft'] ?? 'Draft' }}
                                             </span>
 
                                         </div>
@@ -384,15 +384,21 @@ Document management
                                         </a>
 
 
-                                        @if($status === 'draft')
+                                        @if($memo->template_id && ($isAdmin || ($status === 'draft' && (int) $memo->created_by === (int) auth()->id())))
 
                                             <a
-                                                href="{{ route('memos.edit', $memo) }}"
+                                                href="{{ route('memos.create.template', ['template' => $memo->template_id, 'memo_id' => $memo->id]) }}"
                                                 class="edit-button"
                                             >
-                                                Edit
+                                                {{ $isAdmin ? 'Update' : 'Edit' }}
                                             </a>
 
+                                        @endif
+                                        @if($isAdmin)
+                                            <form method="POST" action="{{ route('admin.memos.destroy', $memo) }}" onsubmit="return confirm('Delete memo {{ $memo->memo_number }}? This cannot be undone.');">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="edit-button">Delete</button>
+                                            </form>
                                         @endif
 
                                     </div>
@@ -477,12 +483,12 @@ Document management
                     @elseif(request('status'))
 
                         You don't have any
-                        {{ ucfirst(request('status')) }}
+                        {{ $memoStatusLabels[request('status')] ?? ucfirst(request('status')) }}
                         memos.
 
                     @else
 
-                        You haven't created any memos yet.
+                        No memos are available for you yet.
 
                     @endif
 
@@ -911,7 +917,7 @@ Document management
 
 .memo-table th {
 
-    padding: 11px 14px;
+    padding: 11px 20px;
 
     background: #fafbfc;
 
@@ -934,7 +940,7 @@ Document management
 
 .memo-table td {
 
-    padding: 15px 14px;
+    padding: 15px 10px;
 
     border-bottom: 1px solid #edf0f3;
 
@@ -973,7 +979,7 @@ Document management
 .memo-table th:nth-child(1),
 .memo-table td:nth-child(1) {
 
-    width: 105px;
+    width: 15%;
 
 }
 
@@ -981,7 +987,7 @@ Document management
 .memo-table th:nth-child(2),
 .memo-table td:nth-child(2) {
 
-    width: 24%;
+    width: 20%;
 
 }
 
@@ -989,7 +995,7 @@ Document management
 .memo-table th:nth-child(3),
 .memo-table td:nth-child(3) {
 
-    width: 16%;
+    width: 23%;
 
 }
 
@@ -997,7 +1003,7 @@ Document management
 .memo-table th:nth-child(4),
 .memo-table td:nth-child(4) {
 
-    width: 15%;
+    width: 13%;
 
 }
 
@@ -1005,7 +1011,7 @@ Document management
 .memo-table th:nth-child(5),
 .memo-table td:nth-child(5) {
 
-    width: 90px;
+    width: 12%;
 
 }
 
@@ -1013,7 +1019,7 @@ Document management
 .memo-table th:nth-child(6),
 .memo-table td:nth-child(6) {
 
-    width: 90px;
+    width: 12%;
 
 }
 
@@ -1021,7 +1027,7 @@ Document management
 .memo-table th:nth-child(7),
 .memo-table td:nth-child(7) {
 
-    width: 80px;
+    width: 22%;
 
 }
 

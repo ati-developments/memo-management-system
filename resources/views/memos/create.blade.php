@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Create Memo')
+@section('title', isset($memo) && $memo ? 'Update Memo' : 'Create Memo')
 
 @section('content')
 
@@ -11,10 +11,10 @@
     ========================================================== --}}
 
     @section('header-title')
-{{ $template->template_name }}
+{{ isset($memo) && $memo ? 'Update ' . $memo->memo_number : $template->template_name }}
 @endsection
 @section('header-description')
-Create a new memo using this template.
+{{ isset($memo) && $memo ? 'Update this memo using its original template.' : 'Create a new memo using this template.' }}
 @endsection
 @section('header-eyebrow')
 Memo builder
@@ -23,7 +23,7 @@ Memo builder
 <x-back-link :fallback="route('memos.new')" />
 @endsection
 @section('header-actions')
-<a href="{{ route('templates.edit', $template->id) }}" class="app-header-button secondary">Edit template</a>
+@if(!isset($memo) || !$memo)<a href="{{ route('templates.edit', $template->id) }}" class="app-header-button secondary">Edit template</a>@endif
 @endsection
 
 
@@ -54,10 +54,11 @@ Memo builder
                     id="memoForm"
                     method="POST"
                     enctype="multipart/form-data"
-                    action="{{ route('memos.store') }}"
+                    action="{{ isset($memo) && $memo ? route('memos.update', $memo) : route('memos.store') }}"
                 >
 
                     @csrf
+                    @if(isset($memo) && $memo) @method('PUT') @endif
 
 
                     <input
@@ -69,6 +70,9 @@ Memo builder
                     <input id="memo-attachments" type="file" name="attachments[]" multiple hidden
                         accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg">
                     <ul id="memo-attachment-list" aria-label="Selected attachments"></ul>
+                    @if(isset($memo) && $memo && $memo->attachments->isNotEmpty())
+                        <p>Current attachments:</p><ul>@foreach($memo->attachments as $attachment)<li><a href="{{ route('memos.attachments.download', [$memo, $attachment]) }}">{{ $attachment->original_name }}</a></li>@endforeach</ul>
+                    @endif
 
 
                     <div class="form-section">
@@ -89,14 +93,16 @@ Memo builder
                                 To
                             </label>
 
-                            <input
-                                type="text"
+                            <textarea
                                 id="to"
                                 name="to"
-                                value="{{ old('to') }}"
                                 class="form-control"
-                                placeholder="Enter recipient"
-                            >
+                                rows="2"
+                                maxlength="1000"
+                                aria-describedby="to-help"
+                                placeholder="Enter one recipient per line"
+                            >{{ old('to', $values->get('to')) }}</textarea>
+                           
 
                         </div>
 
@@ -112,7 +118,7 @@ Memo builder
                                 id="from"
                                 name="from"
                                 class="form-control"
-                                value="{{ auth()->user()->name }}"
+                                value="{{ old('from', $values->get('from', auth()->user()->name)) }}"
                                 readonly
                             >
 
@@ -129,7 +135,7 @@ Memo builder
                                 type="text"
                                 id="through"
                                 name="through"
-                                value="{{ old('through') }}"
+                                value="{{ old('through', $values->get('through')) }}"
                                 class="form-control"
                                 placeholder="Enter through"
                             >
@@ -148,6 +154,7 @@ Memo builder
                                 id="subject"
                                 name="subject"
                                 class="form-control"
+                                value="{{ old('subject', $memo->subject ?? '') }}"
                                 placeholder="Enter subject"
                             >
 
@@ -165,7 +172,8 @@ Memo builder
                                 id="date"
                                 name="date"
                                 class="form-control"
-                                value="{{ date('Y-m-d') }}"
+                                value="{{ old('date', $values->get('date', $memo?->created_at?->format('Y-m-d') ?? date('Y-m-d'))) }}"
+                                readonly
                             >
 
                         </div>
@@ -211,7 +219,7 @@ Memo builder
                                         name="total_charges"
                                         class="form-control calculated-field"
                                         step="0.01"
-                                        value="0.00"
+                                        value="{{ old($field->field_name, $values->get($field->field_name, '0.00')) }}"
                                         readonly
                                     >
 
@@ -267,7 +275,7 @@ Memo builder
                                         @if($field->is_required)
                                             required
                                         @endif
-                                    ></textarea>
+                                    >{{ old($field->field_name, $values->get($field->field_name)) }}</textarea>
 
 
 
@@ -279,7 +287,7 @@ Memo builder
                                         id="{{ $field->field_name }}"
                                         name="{{ $field->field_name }}"
                                         class="form-control"
-                                        value="{{ now()->format('Y-m-d') }}"
+                                        value="{{ old($field->field_name, $values->get($field->field_name, now()->format('Y-m-d'))) }}"
                                         @if($field->is_required)
                                             required
                                         @endif
@@ -296,6 +304,7 @@ Memo builder
                                         name="{{ $field->field_name }}"
                                         class="form-control"
                                         step="0.01"
+                                        value="{{ old($field->field_name, $values->get($field->field_name)) }}"
                                         placeholder="{{ $field->placeholder }}"
                                         @if($field->is_required)
                                             required
@@ -325,7 +334,7 @@ Memo builder
 
                                             @foreach($field->options as $option)
 
-                                                <option value="{{ $option }}">
+                                                <option value="{{ $option }}" @selected(old($field->field_name, $values->get($field->field_name)) == $option)>
                                                     {{ $option }}
                                                 </option>
 
@@ -345,6 +354,7 @@ Memo builder
                                         id="{{ $field->field_name }}"
                                         name="{{ $field->field_name }}"
                                         class="form-control"
+                                        value="{{ old($field->field_name, $values->get($field->field_name)) }}"
                                         placeholder="{{ $field->placeholder }}"
                                         @if($field->is_required)
                                             required
@@ -411,7 +421,11 @@ Memo builder
                                         <tbody
                                             id="table-body-{{ $table->id }}"
                                         >
-
+                                            @php
+                                                $tableRows = old('tables.'.$table->id.'.rows', isset($memo) && $memo ? $memo->tableRows->where('template_table_id', $table->id)->pluck('row_data', 'row_order')->all() : []);
+                                                if (!$tableRows) $tableRows = [[]];
+                                            @endphp
+                                            @foreach($tableRows as $rowIndex => $rowData)
                                             <tr>
 
                                                 @foreach($table->columns as $column)
@@ -421,31 +435,32 @@ Memo builder
                                                         @if($column->column_type === 'textarea')
 
                                                             <textarea 
-                                                                name="tables[{{ $table->id }}][rows][0][{{ $column->column_name }}]" 
+                                                                name="tables[{{ $table->id }}][rows][{{ $rowIndex }}][{{ $column->column_name }}]" 
                                                                 class="form-control table-input"
                                                                 data-table-id="{{ $table->id }}"
-                                                                data-row-index="0"
+                                                                data-row-index="{{ $rowIndex }}"
                                                                 data-column-name="{{ $column->column_name }}"
                                                                 rows="2" 
                                                                 placeholder="{{ $column->placeholder }}" 
                                                                 @if($column->is_required) 
                                                                     required 
                                                                 @endif 
-                                                            ></textarea>
+                                                            >{{ $rowData[$column->column_name] ?? '' }}</textarea>
 
 
                                                         @elseif($column->column_type === 'date')
 
                                                             <input 
                                                                 type="date"
-                                                                name="tables[{{ $table->id }}][rows][0][{{ $column->column_name }}]" 
+                                                                name="tables[{{ $table->id }}][rows][{{ $rowIndex }}][{{ $column->column_name }}]" 
                                                                 class="form-control table-input"
                                                                 data-table-id="{{ $table->id }}"
-                                                                data-row-index="0"
+                                                                data-row-index="{{ $rowIndex }}"
                                                                 data-column-name="{{ $column->column_name }}"
                                                                 @if($column->is_required) 
                                                                     required 
                                                                 @endif 
+                                                                value="{{ $rowData[$column->column_name] ?? '' }}"
                                                             >
 
 
@@ -453,13 +468,14 @@ Memo builder
 
                                                             <input 
                                                                 type="number"
-                                                                name="tables[{{ $table->id }}][rows][0][{{ $column->column_name }}]" 
+                                                                name="tables[{{ $table->id }}][rows][{{ $rowIndex }}][{{ $column->column_name }}]" 
                                                                 class="form-control table-input"
                                                                 data-table-id="{{ $table->id }}"
-                                                                data-row-index="0"
+                                                                data-row-index="{{ $rowIndex }}"
                                                                 data-column-name="{{ $column->column_name }}"
                                                                 step="1"
                                                                 placeholder="{{ $column->placeholder }}" 
+                                                                value="{{ $rowData[$column->column_name] ?? '' }}"
                                                                 @if($column->is_required) 
                                                                     required 
                                                                 @endif 
@@ -470,13 +486,14 @@ Memo builder
 
                                                             <input 
                                                                 type="number"
-                                                                name="tables[{{ $table->id }}][rows][0][{{ $column->column_name }}]" 
+                                                                name="tables[{{ $table->id }}][rows][{{ $rowIndex }}][{{ $column->column_name }}]" 
                                                                 class="form-control table-input"
                                                                 data-table-id="{{ $table->id }}"
-                                                                data-row-index="0"
+                                                                data-row-index="{{ $rowIndex }}"
                                                                 data-column-name="{{ $column->column_name }}"
                                                                 step="0.01"
                                                                 placeholder="{{ $column->placeholder }}" 
+                                                                value="{{ $rowData[$column->column_name] ?? '' }}"
                                                                 @if($column->is_required) 
                                                                     required 
                                                                 @endif 
@@ -487,12 +504,13 @@ Memo builder
 
                                                             <input 
                                                                 type="text"
-                                                                name="tables[{{ $table->id }}][rows][0][{{ $column->column_name }}]" 
+                                                                name="tables[{{ $table->id }}][rows][{{ $rowIndex }}][{{ $column->column_name }}]" 
                                                                 class="form-control table-input"
                                                                 data-table-id="{{ $table->id }}"
-                                                                data-row-index="0"
+                                                                data-row-index="{{ $rowIndex }}"
                                                                 data-column-name="{{ $column->column_name }}"
                                                                 placeholder="{{ $column->placeholder }}" 
+                                                                value="{{ $rowData[$column->column_name] ?? '' }}"
                                                                 @if($column->is_required) 
                                                                     required 
                                                                 @endif 
@@ -505,6 +523,7 @@ Memo builder
                                                 @endforeach
 
                                             </tr>
+                                            @endforeach
 
                                         </tbody>
 
@@ -540,6 +559,7 @@ Memo builder
                     ================================================== --}}
 
                     @include('memos.text-block-editor', ['compact' => true])
+                    @include('memos.workflow-editor')
 
                     <div class="form-actions">
 
@@ -549,7 +569,7 @@ Memo builder
                             value="draft"
                             class="btn btn-secondary"
                         >
-                            Save Draft
+                            {{ isset($memo) && $memo ? 'Update' : 'Save ' . ($memoStatusLabels['draft'] ?? 'Draft') }}
                         </button>
 
 
@@ -559,7 +579,7 @@ Memo builder
                             value="submit"
                             class="btn btn-primary"
                         >
-                            Submit for Approval
+                            {{ isset($memo) && $memo ? 'Update and Submit for Approval' : 'Submit for Approval' }}
                         </button>
 
                     </div>
@@ -599,7 +619,7 @@ Memo builder
 
 
                     <span class="preview-status">
-                        Draft
+                        {{ $memoStatusLabels['draft'] ?? 'Draft' }}
                     </span>
 
                 </div>
@@ -883,7 +903,7 @@ Memo builder
 
                         @php($approvalLabels = \App\Support\ApprovalSignatureLabels::forCount($approvalWorkflow?->steps->count() ?? 0))
                         @foreach($approvalWorkflow?->steps ?? [] as $index => $step)
-                            <div class="signature-block">
+                            <div class="signature-block" data-workflow-signature>
                                 <div class="signature-title">{{ $approvalLabels[$index] ?? 'Approved by' }}</div>
                                 <div class="signature-space"></div>
                                 <div class="signature-name">{{ $step->approver?->name ?? 'Approver' }}</div>
@@ -1965,10 +1985,13 @@ Memo builder
         .preview-header { background: #fafafa; padding: 18px 24px; }
         .preview-header h2 { font-size: 15px; margin-bottom: 4px; }
         .document-preview { box-sizing: border-box; width: calc(100% - 40px); max-width: 794px; min-height: 1000px; margin: 20px auto; padding: 36px 36px 60px; background: #fff; border: 1px solid #ccc; box-shadow: 0 2px 8px #0000000d; font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 1.4; color: #111; }
-        .document-preview .document-title { position: relative; text-align: left; margin-bottom: 20px; padding-right: 42%; }
+        .document-preview .document-title { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 42%); column-gap: 16px; align-items: start; text-align: left; margin-bottom: 20px; padding-right: 0; }
+        .document-preview .document-title h1 { grid-column: 1; grid-row: 1; }
+        .document-preview .document-title .department-name { grid-column: 1; grid-row: 2; overflow-wrap: anywhere; }
         .document-preview .document-title h1 { font-size: 36px; font-weight: 700; line-height: 1.1; color: #595959; margin: 0; }
         .document-preview .department-name { margin-top: 8px; font-size: 15px; font-weight: 700; color: #808080; }
-        .document-brand { position: absolute; right: 0; top: 8px; color: #626e79; text-align: center; line-height: 1; }
+        .document-brand { position: static; grid-column: 2; grid-row: 1 / 3; min-width: 0; justify-self: end; color: #626e79; text-align: center; line-height: 1; }
+        .document-brand img { display: block; }
         .document-brand strong { display: block; font-size: clamp(19px, 2.4vw, 29px); letter-spacing: 1px; }
         .document-brand span { display: block; margin-top: 3px; font-size: 9px; font-weight: 700; }
         .document-preview .memo-details:not(.additional-preview-fields) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 15px; margin-bottom: 26px; }
@@ -1979,7 +2002,7 @@ Memo builder
         .document-preview .memo-details .memo-detail-row:has(#preview_through) { grid-area: 2 / 1; border-top: 0; }
         .document-preview .memo-details .memo-detail-row:has(#preview_date) { grid-area: 2 / 2; border-top: 0; }
         .document-preview .memo-details:not(.additional-preview-fields) .memo-detail-row:has(#preview_subject) { grid-area: 3 / 1 / 4 / 3; display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 0; margin-top: 7px; }
-        .document-preview .memo-label { background: #d0cece; color: #111; font-size: 11px; font-weight: 400; padding: 3px 6px; border-bottom: 1px solid #111; }
+        .document-preview .memo-label { background: #d0cece; color: #111; font-size: 12px; font-weight: 700; padding: 3px 6px; border-bottom: 1px solid #111; }
         .document-preview .memo-value { padding: 4px 6px; min-height: 25px; white-space: pre-line; overflow-wrap: anywhere; }
         .document-preview .memo-detail-row:has(#preview_subject) .memo-label { border-bottom: 0; border-right: 1px solid #111; }
         .document-preview .additional-preview-fields { margin: 0 0 26px; }
@@ -1996,7 +2019,7 @@ Memo builder
         .document-preview .charges-table th { background: #d0cece; font-weight: 700; }
         .document-preview .charges-table th:last-child { text-align: center; }
         .document-preview .recommendation { margin: 36px 0 26px; font-size: 11px; line-height: 1.6; }
-        .document-preview .signature-section { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24%; row-gap: 32px; margin: 0; padding: 0 6px; }
+        .document-preview .signature-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 16px; row-gap: 32px; margin: 0; padding: 0 6px; }
         .document-preview .signature-block { min-width: 0; overflow-wrap: anywhere; }
         .document-preview .signature-title { font-size: 11px; font-weight: 400; color: #111; }
         .document-preview .signature-space { height: 46px; border: 0; margin: 0; }
@@ -2006,8 +2029,11 @@ Memo builder
             .document-preview { width: calc(100% - 20px); margin: 10px auto; padding: 24px 16px 40px; min-height: 0; }
             .document-preview .document-title h1 { font-size: 28px; }
             .document-preview .department-name { font-size: 12px; }
-            .document-preview .signature-section { column-gap: 12%; }
+            .document-preview .signature-section { column-gap: 10px; }
         }
+        .document-preview, .document-preview * { font-family: Arial, Helvetica, sans-serif !important; font-size: 12px !important; }
+        #memoForm input[readonly] { background:#f0f2f5; color:#667085; cursor:default; }
+        html[data-theme=dark] #memoForm input[readonly] { background:#1e2c43 !important; color:#a3b1c7 !important; }
 </style>
 
 

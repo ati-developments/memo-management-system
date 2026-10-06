@@ -8,12 +8,14 @@
         --primary-soft: #edf6e3;
         --primary-line: #c0dda4;
         --ui-blue: var(--primary);
+        --field-focus: #667085;
     }
-    html[data-theme=dark] { --primary-link: #a8d77a; --primary-soft: #26391e; --primary-line: #527b32; }
+    html[data-theme=dark] { --primary-link: #a8d77a; --primary-soft: #26391e; --primary-line: #527b32; --field-focus: #a3b1c7; }
     ::selection { background: var(--primary-line); color: var(--primary-ink); }
     input[type=checkbox], input[type=radio] { accent-color: var(--primary); }
-    .app :is(a,button,input,select,textarea):focus-visible, .theme-toggle:focus-visible { outline-color: var(--primary); }
-    .app :is(input,select,textarea):focus { border-color: var(--primary) !important; box-shadow: 0 0 0 3px #81bd4326; }
+    .app :is(a,button):focus-visible, .theme-toggle:focus-visible { outline-color: var(--primary); }
+    html body :is(input,select,textarea,[contenteditable=true]):focus { border-color: var(--field-focus) !important; box-shadow: none !important; outline-color: var(--field-focus) !important; }
+    html body :is(input,select,textarea,[contenteditable=true]):focus-visible { outline: 2px solid var(--field-focus) !important; outline-offset: 2px !important; }
     .app :is(.btn-primary,.dash-button,.review-button,.app-header-button:not(.secondary),.memo-editor .primary),
     .login-button, .btn-register,
     .app .nav-item.new-memo, .app .brand-logo {
