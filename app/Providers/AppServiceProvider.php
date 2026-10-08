@@ -31,6 +31,19 @@ class AppServiceProvider extends ServiceProvider
             $view->with('memoStatusLabels', $labels);
         });
 
+        // These content views read labels themselves, so the layout composer
+        // does not provide their data while their sections are being rendered.
+        View::composer(['memos.all', 'memos.my', 'dashboard'], function ($view) {
+            $labels = ['draft' => 'Draft', 'pending' => 'Pending', 'approved' => 'Approved'];
+            try {
+                $labels = array_merge($labels, MemoStatusLabel::pluck('label', 'status_key')->all());
+            } catch (\Throwable $exception) {
+                // Keep defaults available before the status-label migration has run.
+            }
+
+            $view->with('memoStatusLabels', $labels);
+        });
+
         View::composer(['layouts.sidebar', 'layouts.workspace-header'], function ($view) {
             $user = Auth::user();
             $sidebarMenuItems = SidebarMenuItem::with(['children' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')])

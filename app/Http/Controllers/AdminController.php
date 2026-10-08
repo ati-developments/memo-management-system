@@ -113,7 +113,8 @@ class AdminController extends Controller
             'department_id' => ['required', 'exists:departments,id'],
             'designation' => ['required', 'string', 'max:255'],
             'role_id' => ['required', 'exists:roles,id'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'change_password' => ['nullable', 'boolean'],
+            'password' => ['nullable', 'required_if:change_password,1', 'string', 'min:8', 'confirmed'],
             'signature' => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:2048'],
         ]);
         if ($user->is($request->user()) && (int) $validated['role_id'] !== (int) $user->role_id) {
@@ -121,7 +122,7 @@ class AdminController extends Controller
         }
         $attributes = collect($validated)->only(['username', 'email', 'employee_id', 'department_id', 'designation', 'role_id'])->all();
         $attributes['name'] = trim($validated['first_name']).' '.trim($validated['last_name']);
-        if ($request->filled('password')) {
+        if ($request->boolean('change_password') && $request->filled('password')) {
             $attributes['password'] = Hash::make($validated['password']);
             $attributes['remember_token'] = Str::random(60);
         }

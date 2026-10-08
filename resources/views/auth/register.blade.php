@@ -10,6 +10,9 @@
         .admin-registration { display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); gap:24px; align-items:start; width:100%; margin:0; }
         .admin-registration .register-container { width:100%; max-width:380px; min-height:0; padding:20px; border-radius:12px; }
         .admin-registration .form-grid { grid-template-columns:minmax(0,1fr); }
+        .admin-registration .change-password-option { display:flex; align-items:center; gap:9px; margin:0; }
+        .admin-registration .register-container .change-password-option input { flex:0 0 16px; width:16px; min-height:16px; height:16px; margin:0; padding:0; accent-color:var(--primary); }
+        .admin-registration .change-password-help { margin:5px 0 0 25px; }
         .admin-registration .register-header { text-align:left; margin-bottom:18px; }
         .admin-registration .register-header h1 { margin:0 0 6px; font-size:25px; }
         .admin-registration .register-header p { margin:0; }
@@ -119,7 +122,7 @@
     @if(isset($editingUser))
         <h2>Update {{ $editingUser->name }}</h2>
         <p>Leave password and signature empty to keep their current values.</p>
-        <a href="{{ route('admin.users.create') }}">Cancel update</a>
+        <!-- <a href="{{ route('admin.users.create') }}">Cancel update</a> -->
     @endif
     {{-- Success message --}}
 
@@ -380,11 +383,22 @@
         <div class="form-grid">
             <div class="form-section-heading" id="register-account-title"><span>02</span> Account password</div>
 
+            @if(isset($editingUser))
+            <div class="form-group full-width">
+                <label for="change_password" class="change-password-option">
+                    <input type="checkbox" id="change_password" name="change_password" value="1" @checked(old('change_password'))>
+                    Change password
+                </label>
+                <p class="help-text change-password-help">Leave this unchecked to keep the current password.</p>
+            </div>
+            <div id="change-password-fields" class="form-group full-width" @if(!old('change_password')) hidden @endif>
+            @endif
+
             <div class="form-group">
 
                 <label for="password">
                     Password
-                    <span class="required">*</span>
+                    @unless(isset($editingUser))<span class="required">*</span>@endunless
                 </label>
 
                 <input
@@ -392,7 +406,7 @@
                     id="password" autocomplete="new-password"
                     name="password"
                     placeholder="Enter password"
-                    @required(!isset($editingUser))
+                    @required(!isset($editingUser) || old('change_password'))
                 >
 
                 @error('password')
@@ -408,7 +422,7 @@
 
                 <label for="password_confirmation">
                     Confirm Password
-                    <span class="required">*</span>
+                    @unless(isset($editingUser))<span class="required">*</span>@endunless
                 </label>
 
                 <input
@@ -416,10 +430,12 @@
                     id="password_confirmation" autocomplete="new-password"
                     name="password_confirmation"
                     placeholder="Confirm password"
-                    @required(!isset($editingUser))
+                    @required(!isset($editingUser) || old('change_password'))
                 >
 
             </div>
+
+            @if(isset($editingUser))</div>@endif
 
 
             {{-- Signature --}}
@@ -478,6 +494,23 @@
 
 
     </form>
+
+    @if(isset($editingUser))
+    <script>
+        const changePasswordToggle = document.getElementById('change_password');
+        const changePasswordFields = document.getElementById('change-password-fields');
+        const passwordInputs = changePasswordFields.querySelectorAll('input');
+        const syncPasswordFields = () => {
+            changePasswordFields.hidden = !changePasswordToggle.checked;
+            passwordInputs.forEach(input => {
+                input.required = changePasswordToggle.checked;
+                input.disabled = !changePasswordToggle.checked;
+            });
+        };
+        changePasswordToggle.addEventListener('change', syncPasswordFields);
+        syncPasswordFields();
+    </script>
+    @endif
 
 </div>
 @if($adminRegistration ?? false)
