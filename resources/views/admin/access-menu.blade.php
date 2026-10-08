@@ -6,7 +6,7 @@
 <style>
     .sidebar-editor { --editor-panel:#1e2c43; --editor-border:#30405a; --editor-text:#e0e8f5; --editor-muted:#a3b1c7; width:100%; color:var(--editor-text); }
     .sidebar-editor-layout { display:grid; grid-template-columns:minmax(0,760px) minmax(280px,1fr); gap:20px; align-items:start; }
-    .sidebar-editor-stack { display:grid; gap:18px; width:100%; margin:0; }
+    .sidebar-editor-stack { display:grid; gap:18px; width:90%; margin:0; }
     .sidebar-editor-card { padding:20px; border:1px solid var(--editor-border); border-radius:12px; background:#19263b; }
     .sidebar-editor-card h2 { margin:0; color:var(--editor-text); font-size:16px; }
     .sidebar-editor-help { margin:6px 0 16px; color:var(--editor-muted); font-size:12px; line-height:1.5; }
@@ -25,7 +25,7 @@
     .menu-sort-detail { color:var(--editor-muted); font-size:11px; }
     .menu-remove-button,.menu-save-button { min-height:36px; padding:7px 12px; border:1px solid #40516c; border-radius:7px; background: #263852; color:var(--editor-text); font:inherit; font-size:12px; cursor:pointer; }
     .menu-remove-button:hover { border-color: #a85f70; color: #ffc3c8; }
-    .menu-save-button { border-color:  var(--primary); background: var(--primary); color:#fff; font-weight:650; }
+    .menu-save-button { display:block; margin-left:auto; border-color:  var(--primary); background: var(--primary); color:#fff; font-weight:650; }
     .menu-save-button:hover { background: #3ba873; }
     .menu-group-children { margin:0 12px 12px 38px; padding-left:10px; border-left:1px solid #ffffff20; }
     .menu-field { display:grid; gap:6px; color:#c5d2e5; font-size:11px; font-weight:650; }
