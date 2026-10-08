@@ -196,6 +196,10 @@ Document management
                             </th>
 
                             <th>
+                                CREATED BY
+                            </th>
+
+                            <th>
                                 DATE
                             </th>
 
@@ -271,26 +275,22 @@ Document management
                                 </td>
 
 
-                                {{-- Department --}}
+                                {{-- Recipients --}}
 
                                 <td>
 
-                                    <div class="department-cell">
+                                    @php
+                                        $recipients = trim((string) $memo->fieldValues->firstWhere('field_name', 'to')?->field_value);
+                                    @endphp
+                                    <div class="recipient-cell">@if($recipients !== ''){{ $recipients }}@else<span class="muted-text">&mdash;</span>@endif</div>
 
-                                        @if($memo->department)
+                                </td>
 
-                                            {{ $memo->department->department_name }}
 
-                                        @else
+                                {{-- Created by --}}
 
-                                            <span class="muted-text">
-                                                —
-                                            </span>
-
-                                        @endif
-
-                                    </div>
-
+                                <td>
+                                    {{ $memo->creator?->name ?? 'Unknown' }}
                                 </td>
 
 
@@ -940,7 +940,7 @@ Document management
 
 .memo-table td {
 
-    padding: 15px 10px;
+    padding: 5px 10px;
 
     border-bottom: 1px solid #edf0f3;
 
@@ -979,7 +979,7 @@ Document management
 .memo-table th:nth-child(1),
 .memo-table td:nth-child(1) {
 
-    width: 15%;
+    width: 13%;
 
 }
 
@@ -987,7 +987,7 @@ Document management
 .memo-table th:nth-child(2),
 .memo-table td:nth-child(2) {
 
-    width: 20%;
+    width: 16%;
 
 }
 
@@ -995,7 +995,7 @@ Document management
 .memo-table th:nth-child(3),
 .memo-table td:nth-child(3) {
 
-    width: 23%;
+    width: 13%;
 
 }
 
@@ -1003,7 +1003,7 @@ Document management
 .memo-table th:nth-child(4),
 .memo-table td:nth-child(4) {
 
-    width: 13%;
+    width: 10%;
 
 }
 
@@ -1011,7 +1011,7 @@ Document management
 .memo-table th:nth-child(5),
 .memo-table td:nth-child(5) {
 
-    width: 12%;
+    width: 10%;
 
 }
 
@@ -1019,7 +1019,7 @@ Document management
 .memo-table th:nth-child(6),
 .memo-table td:nth-child(6) {
 
-    width: 12%;
+    width: 8%;
 
 }
 
@@ -1027,10 +1027,14 @@ Document management
 .memo-table th:nth-child(7),
 .memo-table td:nth-child(7) {
 
-    width: 22%;
+    width: 7%;
 
 }
 
+.memo-table th:nth-child(8),
+.memo-table td:nth-child(8) {
+    width: 12%;
+}
 
 /* =============================================================
    CELLS
@@ -1095,17 +1099,16 @@ Document management
 }
 
 
-.department-cell {
+.recipient-cell {
 
     overflow: hidden;
 
-    color: #667085;
+    color: inherit;
 
-    font-size: 11px;
+    font: inherit;
 
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
 
 }
 

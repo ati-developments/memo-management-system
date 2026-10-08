@@ -556,7 +556,7 @@ class MemoController extends Controller
 
         $query = (clone $baseQuery)->with([
             'template',
-            'department',
+            'fieldValues' => fn ($query) => $query->where('field_name', 'to'),
             'creator',
         ]);
 

@@ -276,8 +276,8 @@
 @include('layouts.workspace-header-styles')
 
 @yield('scripts')
-@if(request()->routeIs('memos.my', 'memos.all', 'approvals.index'))
-    <script src="{{ asset('js/memo-live-search.js') }}" defer></script>
+@if(request()->routeIs('memos.my', 'memos.all', 'approvals.index', 'admin.roles.index'))
+    <script src="{{ asset('js/memo-live-search.js') }}?v={{ filemtime(public_path('js/memo-live-search.js')) }}" defer></script>
 @endif
 
 </body>

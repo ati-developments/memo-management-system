@@ -1,17 +1,19 @@
 (() => {
-    const pageSelector = '.my-memos-page, .approvals-page, .all-memos-page';
+    const pageSelector = '.my-memos-page, .approvals-page, .all-memos-page, #settings-templates';
     const page = document.querySelector(pageSelector);
     if (!page) return;
+    const inputSelector = 'input[name="search"], input[name="template_search"]';
 
     let timer;
     let controller;
     let revision = 0;
 
     const search = async (form, version) => {
-        const input = form.querySelector('input[name="search"]');
+        const input = form.querySelector(inputSelector);
         const url = new URL(form.action, location.href);
         url.search = new URLSearchParams(new FormData(form)).toString();
         url.searchParams.delete('page');
+        url.searchParams.delete('templates_page');
         controller = new AbortController();
         page.setAttribute('aria-busy', 'true');
 
@@ -33,7 +35,7 @@
             page.replaceChildren(...result.childNodes);
             history.replaceState(null, '', url);
             if (focused) {
-                const replacement = page.querySelector('input[name="search"]');
+                const replacement = page.querySelector(inputSelector);
                 replacement.focus({ preventScroll: true });
                 if (start !== null && end !== null) replacement.setSelectionRange(start, end);
             }
@@ -53,7 +55,7 @@
     };
 
     page.addEventListener('input', event => {
-        if (!event.target.matches('input[name="search"]')) return;
+        if (!event.target.matches(inputSelector)) return;
         if (event.isComposing) {
             clearTimeout(timer);
             controller?.abort();
@@ -64,10 +66,15 @@
         schedule(event.target);
     });
     page.addEventListener('compositionend', event => {
-        if (event.target.matches('input[name="search"]')) schedule(event.target);
+        if (event.target.matches(inputSelector)) schedule(event.target);
+    });
+    page.addEventListener('change', event => {
+        if (event.target.matches('.template-filters select[name="department_id"]')) {
+            schedule(event.target, true);
+        }
     });
     page.addEventListener('submit', event => {
-        const input = event.target.querySelector('input[name="search"]');
+        const input = event.target.querySelector(inputSelector);
         if (!input) return;
         event.preventDefault();
         schedule(input, true);

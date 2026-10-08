@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Access Menu')
 @section('header-title', 'Access Menu')
-@section('header-description', 'Arrange, add, or remove the items shown in the sidebar.')
+@section('header-description', 'Arrange or remove sidebar items and manage access by role.')
 @section('styles')
 <style>
     .sidebar-editor { --editor-panel:#1e2c43; --editor-border:#30405a; --editor-text:#e0e8f5; --editor-muted:#a3b1c7; width:100%; color:var(--editor-text); }
@@ -23,17 +23,13 @@
     .menu-sort-name { flex:1; color:var(--editor-text); font-size:13px; font-weight:650; }
     .menu-sort-name svg { width:18px; height:18px; margin-right:6px; vertical-align:middle; }
     .menu-sort-detail { color:var(--editor-muted); font-size:11px; }
-    .menu-remove-button,.menu-restore-button,.menu-save-button,.menu-add-button { min-height:36px; padding:7px 12px; border:1px solid #40516c; border-radius:7px; background: #263852; color:var(--editor-text); font:inherit; font-size:12px; cursor:pointer; }
-    .menu-remove-button:hover,.menu-restore-button:hover { border-color: #a85f70; color: #ffc3c8; }
-    .menu-save-button,.menu-add-button { border-color:  var(--primary); background: var(--primary); color:#fff; font-weight:650; }
-    .menu-save-button:hover,.menu-add-button:hover { background: #3ba873; }
+    .menu-remove-button,.menu-save-button { min-height:36px; padding:7px 12px; border:1px solid #40516c; border-radius:7px; background: #263852; color:var(--editor-text); font:inherit; font-size:12px; cursor:pointer; }
+    .menu-remove-button:hover { border-color: #a85f70; color: #ffc3c8; }
+    .menu-save-button { border-color:  var(--primary); background: var(--primary); color:#fff; font-weight:650; }
+    .menu-save-button:hover { background: #3ba873; }
     .menu-group-children { margin:0 12px 12px 38px; padding-left:10px; border-left:1px solid #ffffff20; }
-    .menu-add-grid { display:grid; grid-template-columns:1fr 1.2fr 180px 160px auto; align-items:end; gap:12px; }
     .menu-field { display:grid; gap:6px; color:#c5d2e5; font-size:11px; font-weight:650; }
     .menu-field input,.menu-field select { width:100%; min-height:39px; padding:8px 10px; border:1px solid #40516c; border-radius:7px; background:#111b2e; color:var(--editor-text); font:inherit; font-size:12px; }
-    .menu-restore-list { display:grid; gap:8px; }
-    .menu-restore-row { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--editor-border); border-radius:8px; background:var(--editor-panel); }
-    .menu-restore-row span:first-child { flex:1; font-size:13px; }
     .menu-empty { color:var(--editor-muted); font-size:12px; }
     .role-access-card { position:sticky; top:20px; }
     .role-access-select { display:grid; width:220px; max-width:100%; margin:14px 0 16px; }
@@ -44,9 +40,8 @@
     .role-access-option label { display:flex; align-items:center; gap:10px; flex:1; cursor:pointer; }
     .role-access-option input { width:16px; height:16px; accent-color:#78a3f5; }
     .role-access-note { padding:12px; border:1px solid #665431; border-radius:8px; background:#342d20; color:#f1dca9; font-size:12px; line-height:1.5; }
-    @media(max-width:900px) { .menu-add-grid { grid-template-columns:1fr 1fr; }.menu-add-button { align-self:end; } }
     @media(max-width:1120px) { .sidebar-editor-layout { grid-template-columns:minmax(0,1fr); }.role-access-card { position:static; } }
-    @media(max-width:540px) { .sidebar-editor-card { padding:15px; }.menu-add-grid { grid-template-columns:1fr; }.menu-sort-detail { display:none; }.menu-group-children { margin-left:16px; } }
+    @media(max-width:540px) { .sidebar-editor-card { padding:15px; }.menu-sort-detail { display:none; }.menu-group-children { margin-left:16px; } }
 </style>
 @endsection
 @section('content')
@@ -87,34 +82,6 @@
             </form>
         </section>
 
-        <section class="sidebar-editor-card" aria-labelledby="sidebar-add-heading">
-            <h2 id="sidebar-add-heading">Add a sidebar link</h2>
-            <p class="sidebar-editor-help">Add a link to a page in this app. Use a local path, for example <code>/reports</code>.</p>
-            <form method="POST" action="{{ route('admin.access-menu.items.store') }}" class="menu-add-grid">
-                @csrf
-                <label class="menu-field">Item name<input name="label" required maxlength="80" value="{{ old('label') }}" placeholder="Reports"></label>
-                <label class="menu-field">Page path<input name="url" required maxlength="500" value="{{ old('url') }}" placeholder="/reports"></label>
-                <label class="menu-field">Place inside
-                    <select name="parent_id"><option value="">Main sidebar</option>@foreach($groups as $group)<option value="{{ $group->id }}">{{ $group->label }}</option>@endforeach</select>
-                </label>
-                <label class="menu-field">Icon
-                    <select name="icon"><option value="document">Document</option><option value="grid">Grid</option><option value="plus">Plus</option><option value="check">Check</option><option value="clock">Clock</option><option value="review">Review</option></select>
-                </label>
-                <button type="submit" class="menu-add-button">Add link</button>
-            </form>
-        </section>
-
-        @if($availableItems->isNotEmpty())
-            <section class="sidebar-editor-card" aria-labelledby="sidebar-restore-heading">
-                <h2 id="sidebar-restore-heading">Removed items</h2>
-                <p class="sidebar-editor-help">Restore an item to make it available in the sidebar again.</p>
-                <div class="menu-restore-list">
-                    @foreach($availableItems as $item)
-                        <div class="menu-restore-row"><span>{{ $item->label }}</span><form method="POST" action="{{ route('admin.access-menu.items.restore', $item) }}">@csrf<button type="submit" class="menu-restore-button">Restore</button></form></div>
-                    @endforeach
-                </div>
-            </section>
-        @endif
     </div>
     <aside class="sidebar-editor-card role-access-card" aria-labelledby="role-access-heading">
         <h2 id="role-access-heading">Dashboard access by role</h2>

@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\UserSignature;
 use App\Models\MemoStatusLabel;
+use App\Models\MemoTemplate;
 use App\Models\SidebarMenuItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -311,11 +312,50 @@ class AdminController extends Controller
         ])->with('success', 'Menu access updated for ' . $user->username . '.');
     }
 
-    public function roles()
+    public function roles(Request $request)
     {
         $roles = Role::orderBy('role_name')->get();
         $memoStatusLabels = MemoStatusLabel::orderBy('status_key')->get()->keyBy('status_key');
-        return view('admin.roles.index', compact('roles', 'memoStatusLabels'));
+        $filters = $request->validate([
+            'template_search' => ['nullable', 'string', 'max:255'],
+            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
+        ]);
+        $templateSearch = trim($filters['template_search'] ?? '');
+        $templates = MemoTemplate::with('department')->withCount('memos')
+            ->when($templateSearch !== '', fn ($query) => $query->where(fn ($query) => $query
+                ->where('template_name', 'like', '%'.$templateSearch.'%')
+                ->orWhere('template_code', 'like', '%'.$templateSearch.'%')))
+            ->when($filters['department_id'] ?? null, fn ($query, $departmentId) => $query->where('department_id', $departmentId))
+            ->orderBy('template_name')->orderBy('id')->paginate(8, ['*'], 'templates_page')
+            ->withQueryString()->appends(['tab' => 'templates']);
+        $departments = Department::orderBy('department_name')->get();
+        return view('admin.roles.index', compact('roles', 'memoStatusLabels', 'templates', 'departments'));
+    }
+
+    public function updateTemplate(Request $request, MemoTemplate $template)
+    {
+        $validated = $request->validate([
+            'template_name' => ['required', 'string', 'max:255'],
+        ]);
+        $template->update($validated);
+
+        return to_route('admin.roles.index', ['tab' => 'templates'])->with('success', 'Template name updated.');
+    }
+
+    public function destroyTemplate(MemoTemplate $template)
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($template) {
+            $template = MemoTemplate::whereKey($template->id)->lockForUpdate()->firstOrFail();
+            if ($template->memos()->exists()) {
+                return to_route('admin.roles.index', ['tab' => 'templates'])
+                    ->withErrors(['template' => 'This template is used by existing memos and cannot be deleted.']);
+            }
+
+            \App\Models\ApprovalWorkflow::where('template_id', $template->id)->delete();
+            $template->delete();
+
+            return to_route('admin.roles.index', ['tab' => 'templates'])->with('success', 'Template deleted.');
+        });
     }
 
     public function storeRole(Request $request)
