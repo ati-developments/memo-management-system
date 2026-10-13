@@ -42,6 +42,7 @@ class MemoApprovalRequested extends Notification implements ShouldQueue
             ->line('Subject: '.$memo->subject)
             ->line('Prepared by: '.$memo->creator?->name)
             ->action('Review memo', route('approvals.review', $this->approval))
-            ->line('Sign in to review the memo and record your decision.');
+            ->line('Sign in to review the memo and record your decision.')
+            ->salutation('Regards, Amana Takaful PLC');
     }
 }

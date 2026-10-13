@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\Memo;
 use App\Models\MemoTemplate;
 use App\Models\MemoApproval;
+use App\Notifications\MemoApproved;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -754,7 +755,7 @@ class MemoController extends Controller
 
         // Security check:
         // Only the assigned approver can access this approval.
-        if ($approval->approver_id !== $user->id) {
+        if ((int) $approval->approver_id !== (int) $user->id) {
             abort(403);
         }
 
@@ -858,6 +859,15 @@ class MemoController extends Controller
 
                 if ($isComplete) {
                     $memo->update(['status' => 'approved', 'completed_at' => now()]);
+
+                    $preparedUser = MemoApproval::query()
+                        ->where('memo_id', $memo->id)
+                        ->where('approval_role', 'prepared')
+                        ->with('approver')
+                        ->first()
+                        ?->approver;
+
+                    $preparedUser?->notify(new MemoApproved($memo->id));
 
                     return 'Memo ' . $memo->memo_number . ' has been fully approved.';
                 }

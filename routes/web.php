@@ -10,13 +10,13 @@ use App\Http\Controllers\AdminController;
 
 /*
 |--------------------------------------------------------------------------
-| Guest Routes
+| Login Routes
 |--------------------------------------------------------------------------
-| These routes are available only before login.
+| Allow signing in as the assigned approver when another account is active.
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('guest')->group(function () {
+Route::group([], function () {
 
     Route::get('/login', [AuthController::class, 'showLogin'])
         ->name('login');
@@ -104,7 +104,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('menu:approvals')->name('approvals.index');
 
     Route::get('/approvals/{approval}', [MemoController::class, 'reviewApproval'])
-        ->middleware('menu:approvals')->name('approvals.review');
+        ->middleware([\App\Http\Middleware\EnsureAssignedApprover::class, 'menu:approvals'])->name('approvals.review');
 
     Route::post('/approvals/{approval}/decision', [MemoController::class, 'recordApprovalDecision'])
         ->middleware('menu:approvals')->name('approvals.decision');

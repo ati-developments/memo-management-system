@@ -10,6 +10,54 @@ class MemoDocumentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_approval_link_prompts_for_the_assigned_account_and_preserves_destination(): void
+    {
+        $memo = $this->draft();
+        $role = \App\Models\Role::create(['role_name' => 'Approver', 'status' => true]);
+        $approver = User::factory()->create(['username' => 'link-approver', 'role_id' => $role->id]);
+        $approval = $memo->approvals()->create([
+            'approver_id' => $approver->id, 'approval_role' => 'approval', 'action' => 'pending',
+        ]);
+        $url = route('approvals.review', $approval);
+
+        $this->get($url)->assertRedirect(route('login'))->assertSessionHas('url.intended', $url);
+        $this->get(route('login'))->assertOk()->assertSee('Please sign in with the account assigned');
+        $this->post(route('login.submit'), ['username' => $approver->username, 'password' => 'password'])
+            ->assertRedirect($url);
+        $this->assertAuthenticatedAs($approver);
+        $this->get($url)->assertOk();
+
+        auth()->logout();
+        $this->get($url)->assertRedirect(route('login'))->assertSessionHas('url.intended', $url);
+    }
+
+    public function test_submitting_an_open_workflow_emails_every_approver(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        $memo = $this->draft();
+        $role = \App\Models\Role::create(['role_name' => 'Approver', 'status' => true]);
+        $approvers = collect(['open-first', 'open-second', 'open-third'])->map(
+            fn ($username) => User::factory()->create(['username' => $username, 'role_id' => $role->id])
+        );
+
+        $this->put(route('memos.update', $memo), [
+            'subject' => 'Open approval emails',
+            'action' => 'submit',
+            'workflow_config' => [
+                'approval_type' => 'open',
+                'approval_rule' => 'all',
+                'steps' => $approvers->map(fn ($user) => ['approver_id' => $user->id])->all(),
+            ],
+        ])->assertSessionHasNoErrors()->assertRedirect(route('memos.my'));
+
+        foreach ($approvers as $approver) {
+            \Illuminate\Support\Facades\Notification::assertSentToTimes(
+                $approver, \App\Notifications\MemoApprovalRequested::class, 1
+            );
+        }
+        \Illuminate\Support\Facades\Notification::assertCount(3);
+    }
+
     public function test_approval_emails_follow_workflow_order_and_stop_after_completion(): void
     {
         \Illuminate\Support\Facades\Notification::fake();

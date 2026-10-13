@@ -9,19 +9,20 @@
     .review-breadcrumb a { color: #687086; text-decoration: none; }
     .review-breadcrumb a:hover { color: #2856e8; }
     .review-breadcrumb strong { color: #27324a; font-weight: 700; }
-    .memo-review-grid { display: grid; grid-template-columns: minmax(0, 1fr) 274px; gap: 20px; align-items: start; }
+    /* Preserve the document column width while bringing the sidebar closer. */
+    .memo-review-grid { display: grid; grid-template-columns: minmax(0, calc(100% - 574px)) 274px; gap: 80px; align-items: start; }
     .memo-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; margin: 0 10px 25px; }
     .status-badge { display: inline-flex; padding: 4px 9px; border-radius: 12px; background: #fff1d5; color: #bd7700; font-size: 10px; font-weight: 700; letter-spacing: .03em; }
     .memo-number { color: #505b72; font-family: 'Courier New', monospace; font-size: 11px; }
-    .print-button { margin-left: auto; padding: 7px 10px; border: 0; border-radius: 6px; background: #eef0f4; color: #344158; cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; text-decoration: none; }
+    .print-button { margin-left: ; padding: 7px 10px; border: 0; border-radius: 6px; background: #eef0f4; color: #344158; cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; text-decoration: none; }
     .print-button:hover { background: #e2e6ee; }
     @include('memos.document-styles')
-    .memo-document { box-sizing: border-box; width: 90%; min-height: 1000px; padding: 36px; border: 1px solid #d0d5dd; background: #fff; }
+    .memo-document { box-sizing: border-box; width: 100%; min-height: 1000px; padding: 36px; border: 1px solid #d0d5dd; background: #fff; }
     .memo-document table { table-layout: fixed; }
     .memo-document td, .memo-document th { overflow-wrap: anywhere; }
     .memo-document .brand img { max-width: 100%; height: auto; }
     .memo-document.attachment-document { padding: 0; min-height: 0; }
-    .document-navigation { display: flex; align-items: center; justify-content: center; gap: 16px; width: 90%; margin-bottom: 12px; }
+    .document-navigation { display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; margin-bottom: 12px; }
     .document-navigation button { padding: 7px 14px; border: 1px solid #d0d5dd; border-radius: 6px; background: #fff; color: #344158; cursor: pointer; }
     .document-navigation button:hover:not(:disabled) { background: #eef0f4; }
     .document-navigation button:focus-visible { outline: 2px solid #2856e8; outline-offset: 3px; }
