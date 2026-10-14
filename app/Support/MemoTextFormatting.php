@@ -21,7 +21,14 @@ class MemoTextFormatting
                 foreach ($node->childNodes as $child) $content .= $render($child);
                 $tag = ['b' => 'strong', 'i' => 'em'][$tag] ?? $tag;
                 if ($tag === 'br') return '<br>';
-                if (in_array($tag, ['strong', 'em', 'u', 'p', 'div'], true)) return '<'.$tag.'>'.$content.'</'.$tag.'>';
+                if ($tag === 'span') {
+                    $size = $node->getAttribute('style');
+                    if (preg_match('/^\s*font-size\s*:\s*(12px|14px|16px|18px|24px)\s*;?\s*$/i', $size, $match)) {
+                        return '<span style="font-size:'.$match[1].'">'.$content.'</span>';
+                    }
+                    return $content;
+                }
+                if (in_array($tag, ['strong', 'em', 'u', 'p', 'div', 'ul', 'ol', 'li', 'h2', 'h3', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td'], true)) return '<'.$tag.'>'.$content.'</'.$tag.'>';
                 return $content;
             };
             $body = $document->getElementsByTagName('body')->item(0);

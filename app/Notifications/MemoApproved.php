@@ -38,12 +38,17 @@ class MemoApproved extends Notification implements ShouldQueue
         $memo = Memo::findOrFail($this->memoId);
 
         return (new MailMessage)
+            ->view(['emails.memo', 'emails.memo-text'], [
+                'memo' => $memo,
+                'approved' => true,
+                'recipientName' => $notifiable->name,
+            ])
             ->subject('Memo approved: '.$memo->memo_number)
             ->greeting('Hello '.$notifiable->name.',')
             ->line('Your memo has been approved.')
             ->line('Memo: '.$memo->memo_number)
             ->line('Subject: '.$memo->subject)
-            ->action('View approved memo', route('memos.show', $memo))
+            ->action('View approved memo', route('memos.pdf', $memo))
             ->salutation('Regards, Amana Takaful PLC');
     }
 }

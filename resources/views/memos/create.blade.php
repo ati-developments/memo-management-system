@@ -58,6 +58,7 @@ Memo builder
                 >
 
                     @csrf
+                    @include('memos.format-selector')
                     @if(isset($memo) && $memo) @method('PUT') @endif
 
 
@@ -185,6 +186,7 @@ Memo builder
                              These come from Template Edit.
                         ========================================================== --}}
 
+                        <fieldset id="template-body-fields" style="border:0; padding:0; margin:0; min-width:0;">
                         @foreach($template->fields as $field)
 
                             {{-- Do not duplicate fixed memo fields --}}
@@ -545,6 +547,8 @@ Memo builder
                         @endforeach
 
                         <div id="inserted-memo-tables"></div>
+                        </fieldset>
+                        @include('memos.freeform-body-editor')
 
                     </div>
 
@@ -558,7 +562,9 @@ Memo builder
                          ACTION BUTTONS
                     ================================================== --}}
 
-                    @include('memos.text-block-editor', ['compact' => true])
+                    <fieldset id="template-text-fields" style="border:0; padding:0; margin:0; min-width:0;">
+                        @include('memos.text-block-editor', ['compact' => true])
+                    </fieldset>
                     @include('memos.workflow-editor')
 
                     <div class="form-actions">
@@ -640,6 +646,7 @@ Memo builder
                          DOCUMENT TITLE
                     ============================================== --}}
 
+                    <div id="template-document-body">
                     <div class="document-title">
 
                         <div class="document-brand"><img src="{{ asset('images/Amana-Takaful-logo.jpeg') }}" alt="Amana Takaful Insurance" style="width:187px;max-width:100%;height:auto"></div>
@@ -878,6 +885,19 @@ Memo builder
                     ============================================== --}}
 
                     @include('memos.text-blocks', ['position' => 'before_signatures'])
+                    </div>
+                    <div id="freeform-document-body" hidden>
+                        <div class="freeform-preview-header">
+                            <h2><span style="white-space:nowrap; font-size:inherit !important;">Memo :</span> {{ $memo?->department?->department_name ?? auth()->user()->department?->department_name }}</h2>
+                            <img src="{{ asset('images/Amana-Takaful-logo.jpeg') }}" alt="Amana Takaful Insurance">
+                        </div>
+                        <dl class="freeform-preview-details">
+                            @foreach(['to' => 'To', 'from' => 'From', 'through' => 'Through', 'subject' => 'Subject', 'date' => 'Date'] as $name => $label)
+                                <dt>{{ $label }}<span aria-hidden="true">:</span></dt><dd data-freeform-detail="{{ $name }}"></dd>
+                            @endforeach
+                        </dl>
+                        <div id="freeform-live-content"></div>
+                    </div>
                     <div class="signature-section">
 
 
@@ -2506,4 +2526,5 @@ function addPreviewTableRow(
 </script>
 
 @include('memos.table-formatting')
+@include('memos.format-switch-script')
 @endsection

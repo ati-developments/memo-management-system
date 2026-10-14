@@ -1,3 +1,6 @@
+@if($memo->creation_type === 'freeform')
+    @include('memos.freeform-document')
+@else
 <table class="letterhead"><tr><td><h1>MEMO</h1><div class="department">{{ $memo->department?->department_name }}</div></td><td class="brand">@if($brandImage ?? null)<img src="{{ $brandImage }}" alt="Amana Takaful Insurance">@else AMANA<small>TAKAFUL INSURANCE</small>@endif</td></tr></table>
 <p class="reference">{{ $memo->memo_number }} &middot; {{ $memoStatusLabels[$memo->status] ?? ucfirst($memo->status) }}</p>
 @include('memos.text-blocks', ['position' => 'start'])
@@ -7,6 +10,7 @@
 </table>
 <table class="subject"><tr><td class="caption">Subject</td><td>{{ $memo->subject }}</td></tr></table>
 @include('memos.document-body')
+@endif
 @php
     $signers = collect([['label' => 'Prepared by', 'user' => $memo->creator, 'approval' => $approvals->firstWhere('approval_role', 'prepared')]]);
     $workflowApprovals = $approvals->where('approval_role', '!=', 'prepared')->values();

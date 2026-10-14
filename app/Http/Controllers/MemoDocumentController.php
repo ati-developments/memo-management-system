@@ -78,7 +78,8 @@ class MemoDocumentController extends Controller
 
         $approvalWorkflow = \App\Models\ApprovalWorkflow::with('steps.approver')->where('template_id', $memo->template_id)->where('is_active', true)->first();
         $workflowUsers = \App\Models\User::orderBy('name')->get(['id', 'name', 'designation']);
-        return view('memos.edit', compact('memo', 'values', 'approvalWorkflow', 'workflowUsers'));
+        $template = $memo->template;
+        return view($memo->creation_type === 'freeform' ? 'memos.create' : 'memos.edit', compact('memo', 'template', 'values', 'approvalWorkflow', 'workflowUsers'));
     }
 
     public function update(Request $request, Memo $memo)

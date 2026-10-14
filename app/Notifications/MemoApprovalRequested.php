@@ -3,20 +3,13 @@
 namespace App\Notifications;
 
 use App\Models\MemoApproval;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class MemoApprovalRequested extends Notification implements ShouldQueue
+class MemoApprovalRequested extends Notification
 {
-    use Queueable;
-
-    public $tries = 3;
-
     public function __construct(public MemoApproval $approval)
     {
-        $this->afterCommit();
     }
 
     public function via(object $notifiable): array
@@ -35,6 +28,11 @@ class MemoApprovalRequested extends Notification implements ShouldQueue
         $memo = $this->approval->memo;
 
         return (new MailMessage)
+            ->view(['emails.memo', 'emails.memo-text'], [
+                'memo' => $memo,
+                'approved' => false,
+                'recipientName' => $notifiable->name,
+            ])
             ->subject('Approval requested: '.$memo->memo_number)
             ->greeting('Hello '.$notifiable->name.',')
             ->line('A memo is ready for your approval.')

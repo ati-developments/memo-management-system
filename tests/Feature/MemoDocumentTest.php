@@ -10,6 +10,80 @@ class MemoDocumentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_freeform_memo_can_be_created_edited_submitted_and_rendered_as_pdf(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        $base = $this->draft();
+        $base->template->fields()->create(['field_name' => 'unwanted', 'field_label' => 'Template only field', 'field_type' => 'text', 'is_active' => true, 'is_required' => true, 'field_order' => 1]);
+        $role = \App\Models\Role::create(['role_name' => 'Approver', 'status' => true]);
+        $approver = User::factory()->create(['username' => 'freeform-approver', 'role_id' => $role->id]);
+        $base->creator->update(['role_id' => $role->id]);
+        $this->actingAs($base->creator->fresh());
+        $this->get(route('memos.new'))->assertOk()->assertDontSee('Free-form memo');
+        $this->get(route('memos.create.template', $base->template))->assertOk()->assertSee('Template only field');
+        $this->get(route('memos.create.template', [$base->template, 'format' => 'freeform']))
+            ->assertOk()->assertSee('Memo body')->assertSee('memo-form-section')->assertSee('freeform-document-body')->assertSee('Without fields');
+        $payload = [
+            'template_id' => $base->template_id, 'creation_type' => 'freeform', 'subject' => 'Rental payment',
+            'to' => 'Finance Team', 'from' => 'Author', 'through' => 'Head of IT', 'date' => '2026-10-14',
+            'content' => '<p><strong>Description:</strong> Monthly rental.</p><ul><li>Invoice 123</li></ul><script>alert(1)</script>',
+            'action' => 'draft', 'workflow_config' => ['approval_type' => 'open', 'approval_rule' => 'all', 'steps' => [['approver_id' => $approver->id]]],
+        ];
+        $this->post(route('memos.store'), $payload)->assertSessionHasNoErrors()->assertRedirect(route('memos.my'));
+        $memo = Memo::latest('id')->first();
+        $this->assertSame('freeform', $memo->creation_type);
+        $this->assertStringContainsString('<ul><li>Invoice 123</li></ul>', $memo->content);
+        $this->assertStringNotContainsString('<script', $memo->content);
+        $this->assertFalse($memo->fieldValues()->where('field_name', 'unwanted')->exists());
+        $this->get(route('memos.edit', $memo))->assertOk()->assertSee('Monthly rental.')->assertSee('freeform-document-body');
+        $this->put(route('memos.update', $memo), array_replace($payload, ['content' => '<script>alert(1)</script>', 'action' => 'submit']))
+            ->assertSessionHasErrors('content');
+        $payload['content'] = '<p><strong>Updated description</strong></p><ul><li>Invoice 456</li></ul><table><tbody><tr><td>Rental</td><td>Rs. 53,100</td></tr></tbody></table>';
+        $payload['action'] = 'submit';
+        $this->put(route('memos.update', $memo), $payload)->assertSessionHasNoErrors()->assertRedirect(route('memos.my'));
+        $memo->refresh();
+        $this->assertSame('pending', $memo->status);
+        $this->assertSame($payload['content'], $memo->content);
+        $html = view('memos.pdf', ['memo' => $memo, 'values' => $memo->fieldValues->pluck('field_value', 'field_name'), 'approvals' => $memo->approvals, 'signatureImages' => []])->render();
+        $this->assertStringContainsString('<ul><li>Invoice 456</li></ul>', $html);
+        $this->assertStringContainsString('<table><tbody><tr><td>Rental</td><td>Rs. 53,100</td></tr></tbody></table>', $html);
+        $this->assertStringContainsString('Finance Team', $html);
+        $this->assertStringNotContainsString('Template only field', $html);
+        \Illuminate\Support\Facades\Notification::assertSentTo($approver, \App\Notifications\MemoApprovalRequested::class);
+        $this->get(route('memos.show', $memo))->assertOk()->assertSee(route('memos.pdf', $memo));
+        $this->get(route('memos.pdf', $memo))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $approval = $memo->approvals()->where('approval_role', 'approval')->first();
+        $this->actingAs($approver)->get(route('approvals.review', $approval))->assertOk()->assertSee('Invoice 456');
+        $this->post(route('approvals.decision', $approval), ['decision' => 'approved'])->assertSessionHasNoErrors();
+        $this->assertSame('approved', $memo->fresh()->status);
+        $this->get(route('memos.pdf', $memo))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    }
+
+    public function test_memo_email_design_renders_details_and_correct_action_links(): void
+    {
+        $memo = $this->draft();
+        $memo->update(['subject' => 'Budget <review> & approval']);
+        $recipient = $memo->creator;
+        $approval = $memo->approvals()->create([
+            'approver_id' => $recipient->id, 'approval_role' => 'approval', 'action' => 'pending',
+        ]);
+
+        foreach ([
+            [new \App\Notifications\MemoApprovalRequested($approval), route('approvals.review', $approval), 'AWAITING YOUR APPROVAL'],
+            [new \App\Notifications\MemoApproved($memo->id), route('memos.pdf', $memo), 'APPROVED'],
+        ] as [$notification, $url, $status]) {
+            $mail = $notification->toMail($recipient);
+            $html = (string) $mail->render();
+            $this->assertStringContainsString($status, $html);
+            $this->assertStringContainsString('Budget &lt;review&gt; &amp; approval', $html);
+            $this->assertStringContainsString('href="'.$url.'"', $html);
+            $this->assertStringContainsString('Amana Takaful PLC', $html);
+            $this->assertStringNotContainsString('<img', $html);
+            $text = view('emails.memo-text', array_merge($mail->toArray(), $mail->viewData))->render();
+            $this->assertStringContainsString($url, $text);
+        }
+    }
+
     public function test_approval_link_prompts_for_the_assigned_account_and_preserves_destination(): void
     {
         $memo = $this->draft();

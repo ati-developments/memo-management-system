@@ -100,6 +100,8 @@ class MemoController extends Controller
         ])->findOrFail($editingMemo?->template_id ?? $request->template_id);
 
         $rules = [
+            'creation_type' => ['sometimes', 'in:template,freeform'],
+            'content' => ['nullable', 'string', 'max:50000'],
             'workflow_config' => ['sometimes', 'array:approval_type,approval_rule,minimum_approvals,steps'],
             'workflow_config.approval_type' => ['required_with:workflow_config', 'in:sequential,open'],
             'workflow_config.approval_rule' => ['required_with:workflow_config', 'in:all,any,minimum'],
@@ -152,6 +154,11 @@ class MemoController extends Controller
             }
         }
         $request->validate($rules);
+        $creationType = $request->input('creation_type', $editingMemo?->creation_type ?? 'template');
+        if ($creationType === 'freeform' && $request->input('action') === 'submit'
+            && trim(html_entity_decode(strip_tags(\App\Support\MemoTextFormatting::sanitize($request->input('content') ?: '<p></p>')))) === '') {
+            throw \Illuminate\Validation\ValidationException::withMessages(['content' => 'Enter the memo body before submitting.']);
+        }
         $workflowConfig = $request->input('workflow_config', $editingMemo?->workflow_config);
         if (!$workflowConfig) {
             $defaultWorkflow = \App\Models\ApprovalWorkflow::with('steps')->where('template_id', $template->id)->where('is_active', true)->first();
@@ -232,8 +239,8 @@ class MemoController extends Controller
                 'created_by'    => $user->id,
                 'subject'       => $request->input('subject'),
                 'status'        => $status,
-                'creation_type' => 'template',
-                'content'       => null,
+                'creation_type' => $request->input('creation_type', $editingMemo?->creation_type ?? 'template'),
+                'content'       => $request->input('creation_type', $editingMemo?->creation_type) === 'freeform' ? \App\Support\MemoTextFormatting::sanitize($request->input('content') ?: '<p></p>') : null,
                 'inserted_items' => $request->input('inserted_items', $editingMemo?->inserted_items ?? []),
                 'table_formats' => $request->input('table_formats', $editingMemo?->table_formats ?? []),
                 'workflow_config' => $workflowConfig,
@@ -255,6 +262,8 @@ class MemoController extends Controller
                 }
                 $memo->update([
                     'subject' => $attributes['subject'],
+                    'creation_type' => $attributes['creation_type'],
+                    'content' => $attributes['creation_type'] === 'freeform' ? $attributes['content'] : null,
                     'status' => $status,
                     'submitted_at' => null,
                     'completed_at' => null,
@@ -290,7 +299,7 @@ class MemoController extends Controller
             }
 
             foreach (['to', 'from', 'through', 'date'] as $name) {
-                if (!$template->fields->contains('field_name', $name)) {
+                if ($memo->creation_type === 'freeform' || !$template->fields->contains('field_name', $name)) {
                     $memo->fieldValues()->create([
                         'field_name' => $name,
                         'field_value' => $request->input($name),
@@ -306,6 +315,7 @@ class MemoController extends Controller
             */
 
             foreach ($template->fields as $field) {
+                if ($memo->creation_type === 'freeform') continue;
 
                 /*
                 * total_charges is calculated separately.
@@ -359,7 +369,7 @@ class MemoController extends Controller
                 ->firstWhere('field_name', 'total_charges');
 
 
-            if ($totalField) {
+            if ($totalField && $memo->creation_type !== 'freeform') {
 
                 $memo->fieldValues()->create([
                     'template_field_id' => $totalField->id,
@@ -375,6 +385,7 @@ class MemoController extends Controller
             |--------------------------------------------------------------------------
             */
             foreach ($request->input('tables', []) as $tableId => $tableData) {
+                if ($memo->creation_type === 'freeform') continue;
                 $table = $template->tables->firstWhere('id', (int) $tableId);
 
                 if (!$table) {

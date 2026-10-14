@@ -1,4 +1,6 @@
 .memo-document { font-family: "Times New Roman", Times, serif; font-size: 9pt; color: #111; line-height: 1.4; }
+.memo-document .freeform-body table { width:100%; table-layout:fixed; border-collapse:collapse; margin:12pt 0; }
+.memo-document .freeform-body td, .memo-document .freeform-body th { border:1px solid #777; padding:6pt; overflow-wrap:anywhere; vertical-align:top; }
 .memo-document, .memo-document * { font-family: "Times New Roman", Times, serif !important; }
     .memo-document table { width: 100%; border-collapse: collapse; }
     .memo-document .letterhead { margin: 0 0 2pt; }
