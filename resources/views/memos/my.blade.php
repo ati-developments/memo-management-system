@@ -384,23 +384,6 @@ Document management
                                         </a>
 
 
-                                        @if($memo->template_id && ($isAdmin || ($status === 'draft' && (int) $memo->created_by === (int) auth()->id())))
-
-                                            <a
-                                                href="{{ route('memos.create.template', ['template' => $memo->template_id, 'memo_id' => $memo->id]) }}"
-                                                class="edit-button"
-                                            >
-                                                {{ $isAdmin ? 'Update' : 'Edit' }}
-                                            </a>
-
-                                        @endif
-                                        @if($isAdmin)
-                                            <form method="POST" action="{{ route('admin.memos.destroy', $memo) }}" onsubmit="return confirm('Delete memo {{ $memo->memo_number }}? This cannot be undone.');">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="edit-button">Delete</button>
-                                            </form>
-                                        @endif
-
                                     </div>
 
                                 </td>
