@@ -20,6 +20,6 @@
             <span class="workspace-notification">{{ $needsMyAction }}</span>
         </a> -->
         @include('layouts.theme-toggle')
-        @include('layouts.profile-link')
+        <!-- @include('layouts.profile-link') -->
     </nav>
 </header>
