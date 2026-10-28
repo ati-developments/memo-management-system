@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+    DirectoryIndex index.php
+    RewriteEngine On
+
+    # Keep direct /public/... URLs working during local development.
+    RewriteRule ^public/ - [L]
+
+    # Serve public assets when the project itself is the web root.
+    RewriteRule ^(images|js|css|build|storage)/(.*)$ public/$1/$2 [L]
+
+    # Route application URLs through the root front controller. The root
+    # index.php wrapper loads Laravel's public entry point while preserving
+    # the /memo_management_system URL prefix for Laravel's router.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>

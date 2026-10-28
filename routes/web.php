@@ -9,12 +9,12 @@ use App\Http\Controllers\AdminController;
 
 
 /*
-|--------------------------------------------------------------------------
 | Login Routes
-|--------------------------------------------------------------------------
-| Allow signing in as the assigned approver when another account is active.
-|--------------------------------------------------------------------------
 */
+
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
 Route::group([], function () {
 
