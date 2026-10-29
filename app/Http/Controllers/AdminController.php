@@ -39,7 +39,6 @@ class AdminController extends Controller
                     $query->where('name', 'like', '%'.$search.'%')
                         ->orWhere('username', 'like', '%'.$search.'%')
                         ->orWhere('email', 'like', '%'.$search.'%')
-                        ->orWhere('employee_id', 'like', '%'.$search.'%')
                         ->orWhere('designation', 'like', '%'.$search.'%')
                         ->orWhereHas('department', fn ($department) => $department->where('department_name', 'like', '%'.$search.'%'))
                         ->orWhereHas('role', fn ($role) => $role->where('role_name', 'like', '%'.$search.'%'));
@@ -67,7 +66,6 @@ class AdminController extends Controller
             'last_name' => ['required', 'string', 'max:127'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'employee_id' => ['required', 'string', 'max:255', 'unique:users,employee_id'],
             'department_id' => ['required', 'exists:departments,id'],
             'designation' => ['required', 'string', 'max:255'],
             'role_id' => ['required', 'exists:roles,id'],
@@ -76,7 +74,7 @@ class AdminController extends Controller
         ]);
 
         $user = User::create([
-            ...collect($validated)->only(['username', 'email', 'employee_id', 'department_id', 'designation', 'role_id'])->all(),
+            ...collect($validated)->only(['username', 'email', 'department_id', 'designation', 'role_id'])->all(),
             'name' => trim($validated['first_name']).' '.trim($validated['last_name']),
             'password' => Hash::make($validated['password']),
         ]);
@@ -109,7 +107,6 @@ class AdminController extends Controller
             'last_name' => ['required', 'string', 'max:127'],
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user)],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user)],
-            'employee_id' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user)],
             'department_id' => ['required', 'exists:departments,id'],
             'designation' => ['required', 'string', 'max:255'],
             'role_id' => ['required', 'exists:roles,id'],
@@ -120,7 +117,7 @@ class AdminController extends Controller
         if ($user->is($request->user()) && (int) $validated['role_id'] !== (int) $user->role_id) {
             return back()->withInput($request->except('password', 'password_confirmation', 'signature'))->withErrors(['role_id' => 'Use another administrator account to change your role.']);
         }
-        $attributes = collect($validated)->only(['username', 'email', 'employee_id', 'department_id', 'designation', 'role_id'])->all();
+        $attributes = collect($validated)->only(['username', 'email', 'department_id', 'designation', 'role_id'])->all();
         $attributes['name'] = trim($validated['first_name']).' '.trim($validated['last_name']);
         if ($request->boolean('change_password') && $request->filled('password')) {
             $attributes['password'] = Hash::make($validated['password']);
@@ -357,6 +354,27 @@ class AdminController extends Controller
 
             return to_route('admin.roles.index', ['tab' => 'templates'])->with('success', 'Template deleted.');
         });
+    }
+
+    public function storeDepartment(Request $request)
+    {
+        $request->merge([
+            'department_code' => strtoupper(trim((string) $request->input('department_code'))),
+        ]);
+
+        $validated = $request->validate([
+            'department_name' => ['required', 'string', 'max:255'],
+            'department_code' => ['required', 'string', 'max:255', 'regex:/^[A-Z0-9_-]+$/', 'unique:departments,department_code'],
+            'description' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        Department::create([
+            ...$validated,
+            'status' => true,
+        ]);
+
+        return to_route('admin.roles.index', ['tab' => 'departments'])
+            ->with('success', 'Department added.');
     }
 
     public function storeRole(Request $request)

@@ -29,9 +29,9 @@
                 @csrf
                 @method('PATCH')
                 <div class="form-grid">
-                    @foreach(['name' => 'Full name', 'username' => 'Username', 'email' => 'Email address', 'employee_id' => 'Employee ID', 'designation' => 'Designation'] as $field => $label)
+                    @foreach(['name' => 'Full name', 'username' => 'Username', 'email' => 'Email address', 'designation' => 'Designation'] as $field => $label)
                         <div class="form-group {{ $field === 'name' ? 'full' : '' }}">
-                            <label class="form-label" for="{{ $field }}">{{ $label }} @if(in_array($field, ['employee_id', 'designation']))<span class="optional">Optional</span>@endif</label>
+                            <label class="form-label" for="{{ $field }}">{{ $label }} @if($field === 'designation')<span class="optional">Optional</span>@endif</label>
                             <input class="form-control" id="{{ $field }}" name="{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" value="{{ old($field, $user->$field) }}" maxlength="255" @required(in_array($field, ['name', 'username', 'email']))>
                         </div>
                     @endforeach

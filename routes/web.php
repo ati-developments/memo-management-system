@@ -139,6 +139,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/roles', [AdminController::class, 'roles'])->name('roles.index');
     Route::put('/templates/{template}', [AdminController::class, 'updateTemplate'])->name('templates.update');
     Route::delete('/templates/{template}', [AdminController::class, 'destroyTemplate'])->name('templates.destroy');
+    Route::post('/departments', [AdminController::class, 'storeDepartment'])->name('departments.store');
     Route::post('/roles', [AdminController::class, 'storeRole'])->name('roles.store');
     Route::put('/roles/{role}', [AdminController::class, 'updateRole'])->name('roles.update');
     Route::put('/memo-status-labels', [AdminController::class, 'updateMemoStatusLabels'])->name('memo-status-labels.update');

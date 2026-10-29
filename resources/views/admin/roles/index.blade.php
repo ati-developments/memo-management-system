@@ -31,6 +31,11 @@
     .edit-form-heading { grid-column:1 / -1; margin:0; font-size:13px; font-weight:650; color:var(--edit-text); }
     .edit-status-card { grid-template-columns:repeat(3,minmax(0,1fr)); }
     .edit-status-card button { grid-column:1 / -1; justify-self:end; }
+    .department-add-card { grid-template-columns:minmax(0,1fr) minmax(0,.55fr) minmax(0,1.5fr) auto; }
+    .department-list { display:grid; gap:8px; margin:0; padding:0; list-style:none; }
+    .department-list li { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 14px; border:1px solid var(--edit-border); border-radius:8px; background:var(--edit-panel); }
+    .department-list strong { color:var(--edit-text); font-size:13px; }
+    .department-list span { color:var(--edit-muted); font-size:12px; }
     .role-edit-card.template-edit-card { grid-template-columns:minmax(0,1fr) auto; padding:14px; gap:10px; align-items:end; }
     .template-edit-card form { margin:0; }
     .template-edit-form { display:flex; align-items:end; gap:14px; min-width:0; }
@@ -63,6 +68,7 @@
 <nav class="settings-edit-nav" role="tablist" aria-label="Settings sections">
     <button type="button" role="tab" aria-controls="settings-roles" aria-selected="true" data-settings-tab="roles">Roles &amp; registration</button>
     <button type="button" role="tab" aria-controls="settings-status" aria-selected="false" data-settings-tab="status">Memo status labels</button>
+    <button type="button" role="tab" aria-controls="settings-departments" aria-selected="false" data-settings-tab="departments">Departments</button>
     <button type="button" role="tab" aria-controls="settings-templates" aria-selected="false" data-settings-tab="templates">Templates</button>
     <button type="button" role="tab" aria-controls="settings-more" aria-selected="false" data-settings-tab="more">More settings</button>
 </nav>
@@ -115,6 +121,35 @@
         @endforeach
         <button type="submit">Save labels</button>
     </form>
+    </section>
+    <section class="edit-section-panel settings-edit-panel" id="settings-departments" data-settings-panel="departments" aria-labelledby="edit-departments-heading" hidden>
+        <div class="edit-section-heading">
+            <div><h2 class="role-edit-section" id="edit-departments-heading">Departments</h2>
+            <p class="role-edit-help">Add an active department for user accounts, templates, and memos. Department codes are used in memo numbers.</p></div>
+            <span class="edit-count">{{ $departments->count() }} departments</span>
+        </div>
+        <form method="POST" action="{{ route('admin.departments.store') }}" class="role-edit-card department-add-card">
+            @csrf
+            <label>Department name
+                <input name="department_name" required maxlength="255" value="{{ old('department_name') }}" placeholder="e.g. Human Resources">
+            </label>
+            <label>Code
+                <input name="department_code" required maxlength="255" pattern="[A-Za-z0-9_-]+" value="{{ old('department_code') }}" placeholder="e.g. HR">
+            </label>
+            <label>Description
+                <input name="description" maxlength="5000" value="{{ old('description') }}" placeholder="Optional">
+            </label>
+            <button type="submit">Add department</button>
+        </form>
+        @if($departments->isNotEmpty())
+            <ul class="department-list" aria-label="Departments">
+                @foreach($departments as $department)
+                    <li><strong>{{ $department->department_name }}</strong><span>{{ $department->department_code }} · {{ $department->status ? 'Active' : 'Inactive' }}</span></li>
+                @endforeach
+            </ul>
+        @else
+            <p class="role-edit-empty">No departments have been added.</p>
+        @endif
     </section>
     <section class="edit-section-panel settings-edit-panel" id="settings-templates" data-settings-panel="templates" aria-labelledby="edit-templates-heading" hidden>
         <div class="edit-section-heading">

@@ -21,7 +21,6 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'employee_id' => ['nullable', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'designation' => ['nullable', 'string', 'max:255'],
         ]);
         if ($validated['email'] !== $user->email) {

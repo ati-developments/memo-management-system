@@ -30,7 +30,7 @@
     .dash-stat.amber .dash-icon { background:#fff4df; color:#a66a0c; }
     .dash-stat.green .dash-icon { background:#e8f6ee; color:#27805c; }
     .dash-stat.action { background:#edf3ff; border-color:#d1dffc; }
-    .dash-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr); gap:14px; align-items:start; }
+    .dash-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr); gap:14px; align-items:stretch; }
     .dash-panel { background:white; border:1px solid var(--line); border-radius:11px; overflow:hidden; min-width:0; }
     .dash-panel-header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 18px; border-bottom:1px solid var(--line); }
     .dash h2 { margin:0; font-size:15px; font-weight:650; letter-spacing:-.2px; }

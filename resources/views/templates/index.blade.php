@@ -31,6 +31,7 @@
     .department-heading > span { padding:3px 7px; border-radius:6px; background:#e9eef6; color:#66768d; font-size:10px; }
     .template-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
     .app .templates-page .template-item { display:grid; grid-template-columns:34px minmax(0,1fr); grid-template-rows:1fr auto; align-items:start; gap:12px; padding:16px; border:1px solid #e0e7f1; border-radius:12px; background:#fff; color:inherit; box-shadow:0 2px 5px #172b4d03; }
+    .app .templates-page .template-item[hidden] { display:none; }
     .app .templates-page .template-item:hover { background:#fff; border-color:#a8bdf1; box-shadow:0 7px 20px #244a960c; transform:translateY(-2px); }
     .app .templates-page .template-file { display:grid; place-items:center; width:34px; height:38px; border-radius:9px; background:#edf2ff; color:#5275c6; }
     .template-file svg { width:20px; height:20px; }
@@ -45,6 +46,9 @@
     .template-empty h2 { margin:0 0 8px; font-size:17px; font-weight:650; }
     .template-empty p { max-width:400px; margin:0 auto; color:var(--muted); font-size:12px; line-height:1.7; }
     .template-reset { margin-top:18px; padding:9px 14px; border:1px solid #c9d7f8; border-radius:8px; background:#edf3ff; color:#315fe9; cursor:pointer; font:inherit; font-size:12px; }
+    .template-pagination { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:20px; color:var(--muted); font-size:12px; }
+    .template-pagination button { min-height:36px; padding:7px 12px; border:1px solid #d7e0ee; border-radius:8px; background:#fff; color:#315fe9; cursor:pointer; font:inherit; }
+    .template-pagination button:disabled { opacity:.45; cursor:not-allowed; }
     @media(max-width:1200px) { .template-list { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media(max-width:850px) { .library-tools-top { align-items:stretch; flex-direction:column; gap:12px; }.template-search-wrap { width:100%; } }
     @media(max-width:600px) { .template-list { grid-template-columns:1fr; }.library-tools { padding:14px; }.template-search { font-size:16px; } }
@@ -110,6 +114,11 @@ Template library
                 @endif
             @endforeach
         </div>
+        <nav id="templatePagination" class="template-pagination" aria-label="Template pagination" hidden>
+            <button type="button" id="previousTemplatePage">Previous</button>
+            <span id="templatePageStatus" aria-live="polite"></span>
+            <button type="button" id="nextTemplatePage">Next</button>
+        </nav>
         <div id="noResults" class="template-empty" hidden><h2>No matching templates</h2><p>Try a different search or choose another department to find the template you need.</p><button type="button" id="resetTemplateFilters" class="template-reset">Clear search and filters</button></div>
     @else
         <div class="template-empty"><h2>Your template library is getting started</h2><p>No templates are available yet. Once templates are added to an active department, you will find them here.</p></div>
@@ -128,39 +137,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const noResults = document.getElementById('noResults');
     const results = document.getElementById('templateResults');
     const clearFilters = document.getElementById('clearTemplateFilters');
+    const pagination = document.getElementById('templatePagination');
+    const previousPage = document.getElementById('previousTemplatePage');
+    const nextPage = document.getElementById('nextTemplatePage');
+    const pageStatus = document.getElementById('templatePageStatus');
+    const pageSize = 12;
+    let currentPage = 1;
     let department = 'all';
     const filterTemplates = () => {
         const query = search.value.trim().toLowerCase();
-        let visibleTemplates = 0;
+        const matchingItems = Array.from(document.querySelectorAll('.template-item')).filter(item => {
+            const departmentMatches = department === 'all' || item.closest('.department-section').dataset.department === department;
+            return departmentMatches && item.dataset.search.toLowerCase().includes(query);
+        });
+        const pageCount = Math.max(1, Math.ceil(matchingItems.length / pageSize));
+        currentPage = Math.min(currentPage, pageCount);
+        const firstItem = (currentPage - 1) * pageSize;
+        const visibleItems = new Set(matchingItems.slice(firstItem, firstItem + pageSize));
         sections.forEach(section => {
-            const departmentMatches = department === 'all' || section.dataset.department === department;
             let sectionTemplates = 0;
             section.querySelectorAll('.template-item').forEach(item => {
-                const visible = departmentMatches && item.dataset.search.toLowerCase().includes(query);
+                const visible = visibleItems.has(item);
                 item.hidden = !visible;
                 if (visible) sectionTemplates++;
             });
             section.hidden = sectionTemplates === 0;
             section.querySelector('.department-visible-count').textContent = `${sectionTemplates} available`;
-            visibleTemplates += sectionTemplates;
         });
-        noResults.hidden = visibleTemplates > 0;
+        noResults.hidden = matchingItems.length > 0;
+        pagination.hidden = pageCount <= 1;
+        previousPage.disabled = currentPage <= 1;
+        nextPage.disabled = currentPage >= pageCount;
+        pageStatus.textContent = `Page ${currentPage} of ${pageCount}`;
+        const visibleCount = Math.min(pageSize, Math.max(0, matchingItems.length - firstItem));
+        results.textContent = `Showing ${visibleCount} of ${matchingItems.length} ${matchingItems.length === 1 ? 'template' : 'templates'}`;
         clearFilters.hidden = !query && department === 'all';
-        results.textContent = `Showing ${visibleTemplates} ${visibleTemplates === 1 ? 'template' : 'templates'}`;
         filters.forEach(filter => {
             const active = filter.dataset.department === department;
             filter.classList.toggle('active', active);
             filter.setAttribute('aria-pressed', String(active));
         });
     };
-    search.addEventListener('input', filterTemplates);
+    search.addEventListener('input', () => { currentPage = 1; filterTemplates(); });
     filters.forEach(filter => filter.addEventListener('click', () => {
         department = filter.dataset.department;
+        currentPage = 1;
         filterTemplates();
     }));
+    previousPage.addEventListener('click', () => { currentPage--; filterTemplates(); });
+    nextPage.addEventListener('click', () => { currentPage++; filterTemplates(); });
     const resetFilters = () => {
         search.value = '';
         department = 'all';
+        currentPage = 1;
         filterTemplates();
         search.focus();
     };

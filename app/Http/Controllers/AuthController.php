@@ -55,13 +55,6 @@ class AuthController extends Controller
                 'unique:users,email'
             ],
 
-            'employee_id' => [
-                'required',
-                'string',
-                'max:255',
-                'unique:users,employee_id'
-            ],
-
             'department_id' => [
                 'required',
                 'exists:departments,id'
@@ -99,7 +92,6 @@ class AuthController extends Controller
             'name' => trim($validated['first_name']).' '.trim($validated['last_name']),
             'username' => $validated['username'],
             'email' => $validated['email'],
-            'employee_id' => $validated['employee_id'],
             'department_id' => $validated['department_id'],
             'designation' => $validated['designation'],
             'role_id' => $validated['role_id'],

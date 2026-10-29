@@ -29,7 +29,10 @@
         .registered-users-search input { flex:0 1 260px; min-width:0; width:260px; max-width:100%; }
         .registered-users table { min-width:850px; }
         .registered-users-actions { display:flex; gap:8px; align-items:center; }
-        .registered-users-actions button,.registered-users-actions a { padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:var(--ui-surface,#fff); color:var(--primary-link); font:inherit; cursor:pointer; text-decoration:none; }
+        .registered-users-actions button,.registered-users-actions a { display:inline-flex; width:36px; height:36px; align-items:center; justify-content:center; padding:0; border:1px solid var(--line); border-radius:7px; background:var(--ui-surface,#fff); color:var(--primary-link); cursor:pointer; text-decoration:none; }
+        .registered-users-actions svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+        .registered-users-actions .registered-users-action--delete { color:#b42318; }
+        .registered-users-actions button:focus-visible,.registered-users-actions a:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
         .registered-users-actions form { margin:0; }
         .registered-users-actions button:disabled { opacity:.45; cursor:not-allowed; }
         .registered-users-search button { padding:12px 16px; border:0; border-radius:8px; background:var(--primary); color:var(--primary-button-text); cursor:pointer; }
@@ -243,31 +246,6 @@
                 >
 
                 @error('email')
-                    <div class="error">{{ $message }}</div>
-                @enderror
-
-            </div>
-
-
-            {{-- Employee ID --}}
-
-            <div class="form-group">
-
-                <label for="employee_id">
-                    Employee ID
-                    <span class="required">*</span>
-                </label>
-
-                <input
-                    type="text"
-                    id="employee_id"
-                    name="employee_id"
-                    value="{{ old('employee_id', $editingUser->employee_id ?? '') }}"
-                    placeholder="Enter employee ID"
-                    required
-                >
-
-                @error('employee_id')
                     <div class="error">{{ $message }}</div>
                 @enderror
 
