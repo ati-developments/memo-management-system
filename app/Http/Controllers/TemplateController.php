@@ -92,6 +92,7 @@ class TemplateController extends Controller
         ]);
 
         $departments = Department::where('status', true)
+            ->orWhere('id', $template->department_id)
             ->orderBy('department_name')
             ->get();
 
@@ -99,6 +100,26 @@ class TemplateController extends Controller
             'template',
             'departments'
         ));
+    }
+
+    public function update(MemoTemplate $template, Request $request)
+    {
+        $validated = $request->validate([
+            'template_name' => ['required', 'string', 'max:255'],
+            'template_code' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('memo_templates', 'template_code')
+                    ->where(fn ($query) => $query->where('department_id', $request->input('department_id')))
+                    ->ignore($template->id),
+            ],
+            'department_id' => ['required', 'integer', 'exists:departments,id'],
+        ]);
+
+        $template->update($validated);
+
+        return to_route('templates.edit', $template)->with('success', 'Template overview updated.');
     }
 
     public function storeFields(MemoTemplate $template, Request $request)

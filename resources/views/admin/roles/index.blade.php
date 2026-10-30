@@ -42,7 +42,11 @@
     .template-edit-form label { flex:1; }
     .role-edit-card.template-edit-card button { display:inline-flex; align-items:center; justify-content:center; height:30px; min-height:30px; padding:5px 10px; width:auto; line-height:1; font-size:11px; white-space:nowrap; border-radius:6px; }
     .template-edit-card input { min-height:34px; padding:7px 10px; font-size:13px; }
-    .template-edit-meta { grid-column:1 / -1; margin:0; color:var(--edit-muted); font-size:11px; }
+    .template-edit-meta { margin:0; color:var(--edit-muted); font-size:11px; }
+    .template-edit-meta strong { color:var(--edit-text); font-size:13px; }
+    .template-settings-actions { display:flex; align-items:center; gap:8px; }
+    .template-settings-actions > a { color:var(--edit-accent); font-size:12px; text-decoration:none; white-space:nowrap; }
+    .template-settings-actions > a:hover { text-decoration:underline; }
     .template-filters { display:flex; flex-wrap:wrap; align-items:end; gap:10px; padding:14px; border:1px solid var(--edit-border); border-radius:10px; background:var(--edit-panel); }
     .template-filters label { display:grid; gap:6px; flex:1 1 180px; color:var(--edit-muted); font-size:12px; }
     .template-filters input,.template-filters select { width:100%; min-width:0; height:36px; padding:7px 10px; border:1px solid #40516c; border-radius:7px; background:#17243a; color:var(--edit-text); font:inherit; }
@@ -154,7 +158,7 @@
     <section class="edit-section-panel settings-edit-panel" id="settings-templates" data-settings-panel="templates" aria-labelledby="edit-templates-heading" hidden>
         <div class="edit-section-heading">
             <div><h2 class="role-edit-section" id="edit-templates-heading">Templates</h2>
-            <p class="role-edit-help">Rename templates or delete unused ones. Templates used by existing memos cannot be deleted.</p></div>
+            <p class="role-edit-help">Delete unused templates. Open a template’s edit page to change its name. Templates used by existing memos cannot be deleted.</p></div>
             <span class="edit-count">{{ $templates->total() }} templates</span>
         </div>
         <form method="GET" action="{{ route('admin.roles.index') }}" class="template-filters">
@@ -176,18 +180,14 @@
         </form>
         @forelse($templates as $template)
             <div class="role-edit-card template-edit-card">
-                <form method="POST" action="{{ route('admin.templates.update', $template) }}" class="template-edit-form">
-                    @csrf @method('PUT')
-                    <label>Template name
-                        <input name="template_name" required maxlength="255" value="{{ $template->template_name }}">
-                    </label>
-                    <button type="submit">Save name</button>
-                </form>
-                <form method="POST" action="{{ route('admin.templates.destroy', $template) }}" onsubmit="return confirm('Delete this template and its fields, tables, and approval workflow? This cannot be undone.');">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="template-delete-button" @disabled($template->memos_count > 0) aria-label="Delete {{ $template->template_name }}">Delete</button>
-                </form>
-                <p class="template-edit-meta">{{ $template->department?->department_name ?? 'No department' }} &middot; {{ $template->template_code }} &middot; {{ $template->memos_count }} memos</p>
+                <p class="template-edit-meta"><strong>{{ $template->template_name }}</strong><br>{{ $template->department?->department_name ?? 'No department' }} &middot; {{ $template->template_code }} &middot; {{ $template->memos_count }} memos</p>
+                <div class="template-settings-actions">
+                    <a href="{{ route('templates.edit', $template) }}">Edit template</a>
+                    <form method="POST" action="{{ route('admin.templates.destroy', $template) }}" onsubmit="return confirm('Delete this template and its fields, tables, and approval workflow? This cannot be undone.');">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="template-delete-button" @disabled($template->memos_count > 0) aria-label="Delete {{ $template->template_name }}">Delete</button>
+                    </form>
+                </div>
             </div>
         @empty
             <p class="role-edit-empty">No templates found. Try another search or department.</p>

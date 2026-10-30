@@ -31,6 +31,9 @@ Template builder
     @if (session('success'))
         <div class="alert alert-success" role="status">{{ session('success') }}</div>
     @endif
+    @if ($errors->any())
+        <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>
+    @endif
 <div class="builder-card">
 
     {{-- =========================================================
@@ -40,47 +43,33 @@ Template builder
     <h2 class="section-title">Template overview</h2>
 
 
-    <div class="template-info">
-
-        <div class="info-item">
-
-            <span class="info-label">
-                Template
-            </span>
-
-            <span class="info-value">
-                {{ $template->template_name }}
-            </span>
-
+    <form method="POST" action="{{ route('templates.update', $template) }}">
+        @csrf
+        @method('PUT')
+        <div class="template-info">
+            <div class="info-item">
+                <label class="info-label" for="template_name">Template name</label>
+                <input class="form-control" type="text" id="template_name" name="template_name" value="{{ old('template_name', $template->template_name) }}" maxlength="255" required>
+            </div>
+            <div class="info-item">
+                <label class="info-label" for="template_code">Code</label>
+                <input class="form-control" type="text" id="template_code" name="template_code" value="{{ old('template_code', $template->template_code) }}" maxlength="255" required>
+            </div>
+            <div class="info-item">
+                <label class="info-label" for="department_id">Department</label>
+                <select class="form-control" id="department_id" name="department_id" required>
+                    @foreach($departments as $department)
+                        <option value="{{ $department->id }}" @selected((string) old('department_id', $template->department_id) === (string) $department->id)>
+                            {{ $department->department_name }}{{ $department->status ? '' : ' (Inactive)' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
         </div>
-
-
-        <div class="info-item">
-
-            <span class="info-label">
-                Code
-            </span>
-
-            <span class="info-value">
-                {{ $template->template_code }}
-            </span>
-
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Save overview</button>
         </div>
-
-
-        <div class="info-item">
-
-            <span class="info-label">
-                Department
-            </span>
-
-            <span class="info-value">
-                {{ $template->department->department_name }}
-            </span>
-
-        </div>
-
-    </div>
+    </form>
 
 
     {{-- =========================================================

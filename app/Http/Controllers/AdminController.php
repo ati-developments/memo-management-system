@@ -330,16 +330,6 @@ class AdminController extends Controller
         return view('admin.roles.index', compact('roles', 'memoStatusLabels', 'templates', 'departments'));
     }
 
-    public function updateTemplate(Request $request, MemoTemplate $template)
-    {
-        $validated = $request->validate([
-            'template_name' => ['required', 'string', 'max:255'],
-        ]);
-        $template->update($validated);
-
-        return to_route('admin.roles.index', ['tab' => 'templates'])->with('success', 'Template name updated.');
-    }
-
     public function destroyTemplate(MemoTemplate $template)
     {
         return \Illuminate\Support\Facades\DB::transaction(function () use ($template) {

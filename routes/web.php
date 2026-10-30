@@ -71,6 +71,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/templates', [TemplateController::class, 'index'])
         ->middleware('menu:templates')->name('templates.index');
+    Route::put('/templates/{template}', [TemplateController::class, 'update'])
+        ->middleware('menu:templates')->name('templates.update');
 
     Route::get('/templates/create', [TemplateController::class, 'create'])
     ->middleware('menu:templates')->name('templates.create');
@@ -137,7 +139,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/access-menu/items/{item}/restore', [AdminController::class, 'restoreSidebarMenuItem'])->name('access-menu.items.restore');
     Route::put('/access-menu/role-access', [AdminController::class, 'updateRoleMenuAccess'])->name('access-menu.role-access.update');
     Route::get('/roles', [AdminController::class, 'roles'])->name('roles.index');
-    Route::put('/templates/{template}', [AdminController::class, 'updateTemplate'])->name('templates.update');
     Route::delete('/templates/{template}', [AdminController::class, 'destroyTemplate'])->name('templates.destroy');
     Route::post('/departments', [AdminController::class, 'storeDepartment'])->name('departments.store');
     Route::post('/roles', [AdminController::class, 'storeRole'])->name('roles.store');
