@@ -21,5 +21,14 @@
         </a> -->
         @include('layouts.theme-toggle')
         <!-- @include('layouts.profile-link') -->
+        <form method="POST" action="{{ route('logout') }}" class="workspace-logout-form">
+            @csrf
+            <button type="submit" class="workspace-tool workspace-logout" aria-label="Log out" title="Log out">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M10 17l5-5-5-5M15 12H3" />
+                    <path d="M12 3h8v18h-8" />
+                </svg>
+            </button>
+        </form>
     </nav>
 </header>

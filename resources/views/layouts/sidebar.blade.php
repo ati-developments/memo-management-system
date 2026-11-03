@@ -47,37 +47,6 @@
             @endforeach
 
         </nav>
-
-
-        <!-- USER -->
-
-        <div class="user-area">
-
-
-            <div>
-
-                <div class="user-name">
-
-
-                </div>
-
-                <div class="user-role">
-
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <form method="POST" action="{{ route('logout') }}" class="logout-form">
-            @csrf
-            <button type="submit" class="logout-button" aria-label="Logout" title="Logout">
-                <span class="logout-icon" aria-hidden="true">&#x21AA;</span>
-                <span>Logout</span>
-            </button>
-        </form>
-
     </aside>
 
     <script>

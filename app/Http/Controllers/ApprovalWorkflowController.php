@@ -102,6 +102,10 @@ class ApprovalWorkflowController extends Controller
                 'nullable',
                 'boolean',
             ],
+            'steps.*.signature_label' => [
+                'nullable',
+                Rule::in(['Recommended by', 'Approved by']),
+            ],
 
         ]);
 
@@ -234,6 +238,7 @@ class ApprovalWorkflowController extends Controller
 
                     'is_required' =>
                         !empty($step['is_required']),
+                    'signature_label' => $step['signature_label'] ?? 'Approved by',
                 ]);
             }
         });

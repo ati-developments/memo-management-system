@@ -3,7 +3,7 @@
         'approval_type' => $approvalWorkflow->approval_type,
         'approval_rule' => $approvalWorkflow->approval_rule,
         'minimum_approvals' => $approvalWorkflow->minimum_approvals,
-        'steps' => $approvalWorkflow->steps->map(fn ($step) => ['approver_id' => $step->approver_id])->values()->all(),
+        'steps' => $approvalWorkflow->steps->map(fn ($step) => ['approver_id' => $step->approver_id, 'signature_label' => $step->signature_label])->values()->all(),
     ] : ['approval_type' => 'sequential', 'approval_rule' => 'all', 'minimum_approvals' => null, 'steps' => []];
     $memoWorkflow = old('workflow_config', $memo->workflow_config ?? $templateWorkflow);
 @endphp
@@ -60,29 +60,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const preview = document.querySelector('.document-preview .signature-section');
         preview?.querySelectorAll('[data-workflow-signature]').forEach(node => node.remove());
         const count = list.children.length;
-        const labels = count === 2 ? ['Checked by', 'Confirmed by'] : count === 4 ? ['Recommended by', 'Approved by', 'Approved by', 'Approved by'] : [];
+        const legacyLabels = count === 2 ? ['Checked by', 'Confirmed by'] : [];
+        const canChooseLabels = count + 1 > 3;
         [...list.children].forEach((row, i) => {
             const select = row.querySelector('select');
             select.name = `workflow_config[steps][${i}][approver_id]`;
+            const labelSelect = row.querySelector('[data-signature-label]');
+            labelSelect.name = `workflow_config[steps][${i}][signature_label]`;
+            labelSelect.disabled = !canChooseLabels;
+            labelSelect.parentElement.hidden = !canChooseLabels;
             select.setAttribute('aria-label', `Approver ${i + 1}`);
             row.querySelector('[data-up]').disabled = i === 0;
             row.querySelector('[data-down]').disabled = i === count - 1;
             if (!preview) return;
             const user = users.find(user => String(user.id) === select.value);
             const block = document.createElement('div'); block.className = 'signature-block'; block.dataset.workflowSignature = '';
-            [['signature-title', labels[i] || 'Approved by'], ['signature-space', ''], ['signature-name', user?.name || 'Approver'], ['signature-designation', user?.designation || '']].forEach(([className, text]) => {
+            [['signature-title', canChooseLabels ? labelSelect.value : (legacyLabels[i] || 'Approved by')], ['signature-space', ''], ['signature-name', user?.name || 'Approver'], ['signature-designation', user?.designation || '']].forEach(([className, text]) => {
                 const node = document.createElement('div'); node.className = className; node.textContent = text; block.append(node);
             });
             preview.append(block);
         });
     };
-    const add = (id = '') => {
+    const add = (id = '', signatureLabel = 'Approved by') => {
         if (list.children.length >= 50) return;
         const row = document.createElement('div'); row.className = 'workflow-step';
         const select = document.createElement('select'); select.className = 'form-control'; select.required = true;
         select.add(new Option('Select approver', ''));
         users.forEach(user => select.add(new Option(user.name + (user.designation ? ' — ' + user.designation : ''), user.id)));
         select.value = String(id); select.addEventListener('change', sync); row.append(select);
+        const labelWrap = document.createElement('div'); labelWrap.hidden = true;
+        const labelSelect = document.createElement('select'); labelSelect.className = 'form-control'; labelSelect.dataset.signatureLabel = ''; labelSelect.setAttribute('aria-label', 'Approval signature role');
+        labelSelect.add(new Option('Approved by', 'Approved by')); labelSelect.add(new Option('Recommended by', 'Recommended by'));
+        labelSelect.value = signatureLabel; labelSelect.addEventListener('change', sync); labelWrap.append(labelSelect); row.append(labelWrap);
         [['up','↑','Move approver up'], ['down','↓','Move approver down'], ['remove','×','Remove approver']].forEach(([action, text, label]) => {
             const button = document.createElement('button'); button.type = 'button'; button.textContent = text; button.setAttribute('aria-label', label); button.dataset[action] = '';
             button.addEventListener('click', () => {
@@ -97,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const load = config => {
         type.value = config.approval_type; rule.value = config.approval_rule;
         minimum.querySelector('input').value = config.minimum_approvals || '';
-        list.replaceChildren(); Object.values(config.steps || []).forEach(step => add(step.approver_id)); sync();
+        list.replaceChildren(); Object.values(config.steps || []).forEach(step => add(step.approver_id, step.signature_label || 'Approved by')); sync();
     };
     rule.addEventListener('change', sync);
     editor.querySelector('[data-workflow-add]').addEventListener('click', () => add());

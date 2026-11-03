@@ -27,6 +27,7 @@
     .workflow-page .step-number { display:grid; place-items:center; width:30px; height:30px; flex-shrink:0; border-radius:50%; background:#e8eeff; color:#3156e8; font-size:12px; font-weight:700; margin-top:25px; }
     .workflow-page .approver-fields { flex:1; min-width:0; }
     .workflow-page .approver-fields .form-group { margin-bottom:12px; }
+    .workflow-page .signature-label-group[hidden] { display:none; }
     .workflow-page .required-checkbox { display:flex; align-items:center; gap:8px; font-size:12px; color:#626779; cursor:pointer; }
     .workflow-page .remove-approver { display:grid; place-items:center; width:40px; height:43px; flex-shrink:0; margin-top:22px; border:1px solid #f1dddd; border-radius:8px; background:#fff6f5; color:#be5252; font-size:20px; cursor:pointer; }
     .workflow-page .remove-approver:hover { background:#fee2e2; }
@@ -472,6 +473,13 @@ Template builder
 
                                     </div>
 
+                                    <div class="form-group signature-label-group" hidden>
+                                        <select name="steps[{{ $index }}][signature_label]" class="form-control signature-label-select" aria-label="Approval signature role">
+                                            <option value="Approved by" {{ ($step->signature_label ?? 'Approved by') === 'Approved by' ? 'selected' : '' }}>Approved by</option>
+                                            <option value="Recommended by" {{ ($step->signature_label ?? 'Approved by') === 'Recommended by' ? 'selected' : '' }}>Recommended by</option>
+                                        </select>
+                                    </div>
+
 
                                     <label class="required-checkbox">
 
@@ -490,7 +498,6 @@ Template builder
                                     </label>
 
                                 </div>
-
 
                                 <button
                                     type="button"
@@ -559,6 +566,13 @@ Template builder
 
                                     </select>
 
+                                </div>
+
+                                <div class="form-group signature-label-group" hidden>
+                                    <select name="steps[0][signature_label]" class="form-control signature-label-select" aria-label="Approval signature role">
+                                        <option value="Approved by">Approved by</option>
+                                        <option value="Recommended by">Recommended by</option>
+                                    </select>
                                 </div>
 
 
@@ -837,6 +851,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         });
 
+        const showSignatureLabels = rows.length + 1 > 3;
+        rows.forEach(function (row, index) {
+            const group = row.querySelector('.signature-label-group');
+            const select = row.querySelector('.signature-label-select');
+            if (!group || !select) return;
+            group.hidden = !showSignatureLabels;
+            select.disabled = !showSignatureLabels;
+            select.name = `steps[${row.dataset.index}][signature_label]`;
+        });
+
 
         if (rows.length === 0) {
 
@@ -926,6 +950,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     </select>
 
                 </div>
+
+            <div class="form-group signature-label-group" hidden>
+                <select name="steps[${index}][signature_label]" class="form-control signature-label-select" aria-label="Approval signature role" disabled>
+                    <option value="Approved by">Approved by</option>
+                    <option value="Recommended by">Recommended by</option>
+                </select>
+            </div>
 
                 <label class="required-checkbox">
 

@@ -921,7 +921,7 @@ Memo builder
                         </div>
 
 
-                        @php($approvalLabels = \App\Support\ApprovalSignatureLabels::forCount($approvalWorkflow?->steps->count() ?? 0))
+                        @php($approvalLabels = \App\Support\ApprovalSignatureLabels::forWorkflow($approvalWorkflow?->steps->map(fn ($step) => ['signature_label' => $step->signature_label])->all()))
                         @foreach($approvalWorkflow?->steps ?? [] as $index => $step)
                             <div class="signature-block" data-workflow-signature>
                                 <div class="signature-title">{{ $approvalLabels[$index] ?? 'Approved by' }}</div>

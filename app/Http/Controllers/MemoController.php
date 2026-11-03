@@ -10,6 +10,7 @@ use App\Notifications\MemoApproved;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class MemoController extends Controller
 {
@@ -107,8 +108,9 @@ class MemoController extends Controller
             'workflow_config.approval_rule' => ['required_with:workflow_config', 'in:all,any,minimum'],
             'workflow_config.minimum_approvals' => ['nullable', 'required_if:workflow_config.approval_rule,minimum', 'integer', 'min:1'],
             'workflow_config.steps' => ['required_with:workflow_config', 'array', 'min:1', 'max:50'],
-            'workflow_config.steps.*' => ['array:approver_id'],
+            'workflow_config.steps.*' => ['array:approver_id,signature_label'],
             'workflow_config.steps.*.approver_id' => ['required', 'integer', 'exists:users,id', 'distinct'],
+            'workflow_config.steps.*.signature_label' => ['nullable', Rule::in(['Recommended by', 'Approved by'])],
             'table_formats' => ['nullable', 'array', 'max:5000'],
             'table_formats.*' => ['array:cell,bold,italic,underline'],
             'table_formats.*.cell' => ['required', 'string', 'max:255', 'regex:/^(tables|inserted_items)\[[a-zA-Z0-9_]+\]\[rows\]\[[0-9]+\]\[[a-zA-Z0-9_]+\]$/'],
@@ -167,7 +169,7 @@ class MemoController extends Controller
                     'approval_type' => $defaultWorkflow->approval_type,
                     'approval_rule' => $defaultWorkflow->approval_rule,
                     'minimum_approvals' => $defaultWorkflow->minimum_approvals,
-                    'steps' => $defaultWorkflow->steps->map(fn ($step) => ['approver_id' => $step->approver_id])->all(),
+                    'steps' => $defaultWorkflow->steps->map(fn ($step) => ['approver_id' => $step->approver_id, 'signature_label' => $step->signature_label])->all(),
                 ];
             }
         }
@@ -439,6 +441,7 @@ class MemoController extends Controller
                         'approver_id' => $step['approver_id'],
                         'step_order' => $index + 1,
                         'is_required' => true,
+                        'signature_label' => $step['signature_label'] ?? 'Approved by',
                     ]);
                 }
                 $workflow->load('steps');

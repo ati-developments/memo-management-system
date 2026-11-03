@@ -14,7 +14,7 @@
 @php
     $signers = collect([['label' => 'Prepared by', 'user' => $memo->creator, 'approval' => $approvals->firstWhere('approval_role', 'prepared')]]);
     $workflowApprovals = $approvals->where('approval_role', '!=', 'prepared')->values();
-    $approvalLabels = \App\Support\ApprovalSignatureLabels::forCount($workflowApprovals->count());
+    $approvalLabels = \App\Support\ApprovalSignatureLabels::forWorkflow($memo->workflow_config['steps'] ?? array_fill(0, $workflowApprovals->count(), []));
     foreach ($workflowApprovals as $index => $approval) {
         $signers->push(['label' => $approvalLabels[$index] ?? 'Approved by', 'user' => $approval->approver, 'approval' => $approval]);
     }

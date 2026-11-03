@@ -9,7 +9,9 @@
     .settings-edit-layout { display:grid; grid-template-columns:220px minmax(0,1fr); gap:20px; align-items:start; }
     .settings-edit-nav { display:grid; gap:7px; padding:12px; border:1px solid var(--edit-border); border-radius:12px; background:var(--edit-bg); position:sticky; top:18px; }
     .settings-edit-nav button { padding:7px 10px; border:1px solid transparent; border-radius:6px; background:transparent; color:var(--edit-muted); text-align:left; font:inherit; font-size:14px; line-height:1.4; cursor:pointer; }
-    .settings-edit-nav button[aria-selected="true"] { background:#2c4576; color:#e1ebff; border-color:#405985; }
+    .settings-edit-nav button:hover { background:var(--primary-soft); color:var(--primary-link); border-color:var(--primary-line); }
+    .settings-edit-nav button[aria-selected="true"] { background:var(--primary); color:var(--primary-button-text); border-color:var(--primary); }
+    .settings-edit-nav button[aria-selected="true"]:hover { background:var(--primary-hover); color:var(--primary-button-text); border-color:var(--primary-hover); }
     .settings-edit-panel[hidden] { display:none; }
     .role-edit-card { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) 130px auto; gap:14px; align-items:end; padding:18px; background:var(--edit-panel); border:1px solid var(--edit-border); border-radius:10px; }
     .role-edit-card label { min-width:0; }

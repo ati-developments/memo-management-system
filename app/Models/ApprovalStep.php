@@ -12,6 +12,7 @@ class ApprovalStep extends Model
         'approver_id',
         'step_order',
         'is_required',
+        'signature_label',
     ];
 
     protected $casts = [

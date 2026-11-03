@@ -195,7 +195,7 @@
     .create-template-title {
         margin: 0 0 4px;
 
-        color: #3155e7;
+        color: var(--primary-link);
 
         font-size: 13px;
         font-weight: 700;

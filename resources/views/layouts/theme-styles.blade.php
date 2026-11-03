@@ -6,6 +6,21 @@
     .auth-theme-toggle { position:absolute; top:18px; right:20px; }
     @media screen {
         html { color-scheme:light; }
+        html:not([data-theme=dark]) .app .sidebar { background:#f8fafc; color:#182438; border-right:1px solid #dce2eb; scrollbar-color:#c3ccda transparent; }
+        html:not([data-theme=dark]) .app .sidebar .brand { border-color:#e2e8f0; }
+        html:not([data-theme=dark]) .app .sidebar .nav-subitems { border-color:#dce2eb; }
+        html:not([data-theme=dark]) .app .sidebar .nav-item { color:var(--primary-link); }
+        html:not([data-theme=dark]) .app .sidebar .nav-item:hover { background:var(--primary-soft); color:var(--primary-link); }
+        html:not([data-theme=dark]) .app .sidebar .nav-item.active { background:var(--primary-soft); border-color:var(--primary-line); color:var(--primary-link); box-shadow:inset 3px 0 var(--primary); }
+        html:not([data-theme=dark]) .app .sidebar .nav-item.new-memo { background:var(--primary); border-color:var(--primary); color:var(--primary-button-text); }
+        html:not([data-theme=dark]) .app .sidebar .nav-item.new-memo:hover { background:var(--primary-hover); color:var(--primary-button-text); }
+        html:not([data-theme=dark]) .app .sidebar .badge { background:#fbbf24; color:#33270d; }
+        html:not([data-theme=dark]) .app .sidebar .user-area { border-color:#e2e8f0; }
+        html:not([data-theme=dark]) .app .sidebar .user-avatar { background:#e5ebf5; border-color:#cbd5e1; color:#334155; }
+        html:not([data-theme=dark]) .app .sidebar .user-role { color:#64748b; }
+        html:not([data-theme=dark]) .app .sidebar .logout-form { border-color:#e2e8f0; }
+        html:not([data-theme=dark]) .app .sidebar .logout-button { color:var(--primary-link); }
+        html:not([data-theme=dark]) .app .sidebar .logout-button:hover { background:var(--primary-soft); color:var(--primary-link); }
         /* Admin editors use dark defaults; provide their light-mode palette. */
         html:not([data-theme=dark]) .sidebar-editor { --editor-panel:#f5f7fb; --editor-border:#dce2eb; --editor-text:#182438; --editor-muted:#59697f; }
         html:not([data-theme=dark]) .sidebar-editor-card { background:#fff; }
