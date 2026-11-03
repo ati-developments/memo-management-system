@@ -320,6 +320,7 @@ class AdminController extends Controller
         ]);
         $templateSearch = trim($filters['template_search'] ?? '');
         $templates = MemoTemplate::with('department')->withCount('memos')
+            ->where('is_one_time', false)
             ->when($templateSearch !== '', fn ($query) => $query->where(fn ($query) => $query
                 ->where('template_name', 'like', '%'.$templateSearch.'%')
                 ->orWhere('template_code', 'like', '%'.$templateSearch.'%')))

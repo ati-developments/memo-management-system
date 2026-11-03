@@ -10,10 +10,10 @@
 
 <div class="template-editor">
 @section('header-title')
-Configure your template
+{{ $template->is_one_time ? 'Configure one-time memo' : 'Configure your template' }}
 @endsection
 @section('header-description')
-Shape the information your team collects, from individual fields to detailed tables.
+{{ $template->is_one_time ? 'Set up the fields and tables for this one-time memo.' : 'Shape the information your team collects, from individual fields to detailed tables.' }}
 @endsection
 @section('header-eyebrow')
 Template builder
@@ -40,7 +40,7 @@ Template builder
          TEMPLATE INFORMATION
     ========================================================== --}}
 
-    <h2 class="section-title">Template overview</h2>
+    <h2 class="section-title">{{ $template->is_one_time ? 'One-time memo details' : 'Template overview' }}</h2>
 
 
     <form method="POST" action="{{ route('templates.update', $template) }}">
@@ -519,6 +519,9 @@ Template builder
             >
                 Save Tables
             </button>
+            @if($template->is_one_time)
+                <a href="{{ route('memos.create.template', $template) }}" class="btn btn-primary">Create one-time memo &rarr;</a>
+            @endif
 
         </div>
 

@@ -16,11 +16,13 @@ class MemoTemplate extends Model
         'document_path',
         'allow_optional_text',
         'status',
+        'is_one_time',
         'created_by',
     ];
 
     protected $casts = [
         'status' => 'boolean',
+        'is_one_time' => 'boolean',
         'allow_optional_text' => 'boolean',
     ];
 

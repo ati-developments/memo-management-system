@@ -30,6 +30,7 @@ class MemoController extends Controller
             $request->department_id
         )
         ->where('status', true)
+        ->where('is_one_time', false)
         ->orderBy('template_name')
         ->get();
 
@@ -101,7 +102,7 @@ class MemoController extends Controller
         ])->findOrFail($editingMemo?->template_id ?? $request->template_id);
 
         $rules = [
-            'creation_type' => ['sometimes', 'in:template,freeform'],
+            'creation_type' => ['sometimes', Rule::in(['template', 'freeform'])],
             'content' => ['nullable', 'string', 'max:50000'],
             'workflow_config' => ['sometimes', 'array:approval_type,approval_rule,minimum_approvals,steps'],
             'workflow_config.approval_type' => ['required_with:workflow_config', 'in:sequential,open'],
@@ -904,6 +905,7 @@ class MemoController extends Controller
         $departments = Department::where('status', true)
             ->with(['memoTemplates' => function ($query) {
                 $query->where('status', true)
+                    ->where('is_one_time', false)
                     ->orderBy('template_name');
             }])
             ->orderBy('department_name')

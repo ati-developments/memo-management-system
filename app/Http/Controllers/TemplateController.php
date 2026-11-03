@@ -18,6 +18,7 @@ class TemplateController extends Controller
         $departments = Department::with([
             'memoTemplates' => function ($query) {
                 $query->where('status', true)
+                    ->where('is_one_time', false)
                     ->withCount('fields')
                     ->orderBy('template_name');
             }
@@ -42,28 +43,47 @@ class TemplateController extends Controller
 
     public function store(Request $request)
     {
+        $mode = $request->input('creation_mode', 'template');
+        $isOneTime = $mode === 'one_time';
+
         $validated = $request->validate([
+            'creation_mode' => ['required', Rule::in(['template', 'one_time'])],
             'template_name' => ['required', 'string', 'max:255'],
-            'template_code' => ['required', 'string', 'max:255'],
+            'template_code' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('memo_templates', 'template_code')
+                    ->where(fn ($query) => $query
+                        ->where('department_id', $request->input('department_id'))
+                        ->where('is_one_time', $isOneTime)),
+            ],
             'department_id' => ['required', 'exists:departments,id'],
             'description' => ['nullable', 'string'],
-            'status' => ['required', 'boolean'],
+            'status' => ['required_if:creation_mode,template', 'nullable', 'boolean'],
         ]);
 
 
-        $template = DB::transaction(function () use ($validated) {
+        $template = DB::transaction(function () use ($validated, $isOneTime) {
 
             return MemoTemplate::create([
                 'department_id' => $validated['department_id'],
                 'template_name' => $validated['template_name'],
                 'template_code' => $validated['template_code'],
                 'description' => $validated['description'] ?? null,
-                'status' => $validated['status'],
+                'status' => $isOneTime ? true : $validated['status'],
+                'is_one_time' => $isOneTime,
                 'created_by' => Auth::id(),
             ]);
 
         });
 
+
+        if ($isOneTime) {
+            return redirect()
+                ->route('memos.create.template', $template->id)
+                ->with('success', 'One-time memo details saved. Continue creating your memo.');
+        }
 
         return redirect()
             ->route('templates.edit', $template->id)
@@ -112,6 +132,7 @@ class TemplateController extends Controller
                 'max:255',
                 Rule::unique('memo_templates', 'template_code')
                     ->where(fn ($query) => $query->where('department_id', $request->input('department_id')))
+                    ->where(fn ($query) => $query->where('is_one_time', $template->is_one_time))
                     ->ignore($template->id),
             ],
             'department_id' => ['required', 'integer', 'exists:departments,id'],
