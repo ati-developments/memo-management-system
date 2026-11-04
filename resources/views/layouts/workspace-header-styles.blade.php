@@ -37,6 +37,19 @@
     .workspace-tool:hover { background:#2b3c4c; }
     .workspace-notification { position:absolute; top:-6px; right:-3px; min-width:17px; padding:2px 4px; border-radius:10px; background:#ef4444; color:white; font-size:9px; font-weight:700; text-align:center; }
     .workspace-tool.workspace-logout { background:#2c1e2c; border-color:#603348; color:#ff9fac; font-size:23px; }
+    .workspace-logout-dialog { width:min(420px,calc(100vw - 32px)); padding:28px; border:1px solid #d9e2d5; border-radius:18px; background:#fff; color:#243321; box-shadow:0 24px 80px #10182840; text-align:center; }
+    .workspace-logout-dialog::backdrop { background:#0b1220a6; backdrop-filter:blur(3px); }
+    .workspace-logout-dialog-icon { display:grid; place-items:center; width:48px; height:48px; margin:0 auto 14px; border-radius:15px; background:#fff0f1; color:#b42335; }
+    .workspace-logout-dialog-icon svg { width:23px; height:23px; }
+    .workspace-logout-dialog h2 { margin:0; color:inherit; font-size:19px; }
+    .workspace-logout-dialog p { margin:8px 0 22px; color:#667085; font-size:13px; }
+    .workspace-logout-dialog-actions { display:flex; justify-content:center; gap:10px; }
+    .workspace-logout-dialog-actions button { min-width:108px; padding:10px 16px; border:1px solid #d0d5dd; border-radius:9px; font:inherit; font-size:13px; font-weight:650; cursor:pointer; }
+    .workspace-logout-cancel { background:#fff; color:#344054; }
+    .workspace-logout-confirm { border-color:#b42335 !important; background:#b42335; color:#fff; }
+    html[data-theme=dark] .workspace-logout-dialog { border-color:#34435a; background:#172238; color:#e7edf5; }
+    html[data-theme=dark] .workspace-logout-dialog p { color:#a8b4c5; }
+    html[data-theme=dark] .workspace-logout-cancel { border-color:#40516c; background:#22314a; color:#e7edf5; }
     .app .sidebar .brand { min-height:84px; height:84px; }
     .app .app-page-header { padding:18px 28px; }
     .app .app-page-header h1 { font-size:23px; letter-spacing:0; }
