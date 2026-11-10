@@ -96,7 +96,7 @@ Document register
                                 <td><span class="memo-date">{{ $memo->created_at?->format('d M Y') ?? '—' }}</span></td>
                                 <td><span class="status {{ strtolower($memo->status) }}">{{ $memoStatusLabels[$memo->status] ?? ucfirst($memo->status) }}</span></td>
                                 <td><span class="approval-summary"><strong>{{ $memo->approved_approvals_count }}</strong> / {{ $memo->total_approvals_count }} signed</span></td>
-                                <td><a class="status-tab" href="{{ route('memos.pdf', $memo) }}" target="_blank" rel="noopener">View</a></td>
+                                <td><a class="status-tab" href="{{ route('memos.pdf', $memo) }}" target="_blank" rel="noopener">View</a>@if(in_array($memo->status, ['draft', 'pending'], true) && (int) $memo->created_by === (int) auth()->id() && ($memo->status !== 'pending' || !$memo->approvals()->where('approval_role', 'approval')->where('action', 'approved')->exists())) <a class="status-tab" href="{{ $memo->creation_type === 'freeform' ? route('memos.edit', $memo) : route('memos.create.template', ['template' => $memo->template_id, 'memo_id' => $memo->id]) }}">Edit</a>@endif</td>
                             </tr>
                         @endforeach
                     </tbody>

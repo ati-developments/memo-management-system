@@ -383,6 +383,9 @@ Document management
                                             <span>→</span>
                                         </a>
 
+                                        @if(in_array($status, ['draft', 'pending'], true) && (int) $memo->created_by === (int) auth()->id() && ($status !== 'pending' || !$memo->approvals()->where('approval_role', 'approval')->where('action', 'approved')->exists()))
+                                            <a href="{{ $memo->creation_type === 'freeform' ? route('memos.edit', $memo) : route('memos.create.template', ['template' => $memo->template_id, 'memo_id' => $memo->id]) }}" class="view-button">Edit</a>
+                                        @endif
 
                                     </div>
 

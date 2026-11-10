@@ -66,9 +66,12 @@ class MemoController extends Controller
         $values = collect();
         if ($request->filled('memo_id')) {
             $memo = Memo::with(['fieldValues', 'tableRows', 'attachments'])->findOrFail($request->integer('memo_id'));
-            $isAdmin = in_array(strtolower((string) auth()->user()?->role?->role_name), ['admin', 'administrator'], true);
             abort_unless((int) $memo->template_id === (int) $template->id, 404);
-            abort_unless($isAdmin || ((int) $memo->created_by === (int) auth()->id() && $memo->status === 'draft'), 403);
+            abort_unless((int) $memo->created_by === (int) auth()->id(), 403);
+            abort_unless(in_array($memo->status, ['draft', 'pending'], true), 403, 'This memo can no longer be edited.');
+            if ($memo->status === 'pending') {
+                abort_if($memo->approvals()->where('approval_role', 'approval')->where('action', 'approved')->exists(), 403, 'This memo can no longer be edited after an approval.');
+            }
             $values = $memo->fieldValues->pluck('field_value', 'field_name');
         }
 
@@ -254,15 +257,13 @@ class MemoController extends Controller
             ];
             if ($editingMemo) {
                 $memo = Memo::query()->lockForUpdate()->findOrFail($editingMemo->id);
-                $isAdmin = in_array(strtolower((string) $user?->role?->role_name), ['admin', 'administrator'], true);
-                abort_unless($isAdmin || (int) $memo->created_by === (int) $user->id, 403);
-                abort_unless($isAdmin || $memo->status === 'draft', 403, 'Only draft memos can be edited.');
-                if ($isAdmin && $memo->status !== 'draft') {
-                    foreach ($memo->approvals()->whereNotNull('signature_path')->pluck('signature_path') as $signaturePath) {
-                        \Illuminate\Support\Facades\Storage::disk('public')->delete($signaturePath);
-                    }
-                    $memo->approvals()->delete();
+                abort_unless((int) $memo->created_by === (int) $user->id, 403);
+                abort_unless(in_array($memo->status, ['draft', 'pending'], true), 403, 'This memo can no longer be edited.');
+                if ($memo->status === 'pending') {
+                    abort_if($memo->approvals()->where('approval_role', 'approval')->where('action', 'approved')->exists(), 403, 'This memo can no longer be edited after an approval.');
                 }
+                // Replace outstanding requests if an unapproved pending memo is revised.
+                $memo->approvals()->delete();
                 $memo->update([
                     'subject' => $attributes['subject'],
                     'creation_type' => $attributes['creation_type'],

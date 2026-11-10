@@ -108,12 +108,11 @@ class MemoDocumentController extends Controller
 
     private function authorizeEdit(Memo $memo): void
     {
-        $isAdmin = in_array(strtolower((string) auth()->user()?->role?->role_name), ['admin', 'administrator'], true);
-        if ($isAdmin) {
-            return;
-        }
         abort_unless((int) $memo->created_by === (int) auth()->id(), 403);
-        abort_unless($memo->status === 'draft', 403, 'Only draft memos can be edited.');
+        abort_unless(in_array($memo->status, ['draft', 'pending'], true), 403, 'This memo can no longer be edited.');
+        if ($memo->status === 'pending') {
+            abort_if($memo->approvals()->where('approval_role', 'approval')->where('action', 'approved')->exists(), 403, 'This memo can no longer be edited after an approval.');
+        }
     }
 
     private function authorizeView(Memo $memo): void
