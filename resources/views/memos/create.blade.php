@@ -399,7 +399,7 @@ Memo builder
 
                                                 @foreach($table->columns as $column)
 
-                                                    <th>
+                                                    <th style="{{ in_array($column->column_type, ['number', 'decimal'], true) ? 'text-align:right' : '' }}">
 
                                                         {{ $column->column_label }}
 
@@ -469,7 +469,7 @@ Memo builder
                                                         @elseif($column->column_type === 'number')
 
                                                             <input 
-                                                                type="number"
+                                                                type="text" inputmode="numeric" data-number-format="grouped"
                                                                 name="tables[{{ $table->id }}][rows][{{ $rowIndex }}][{{ $column->column_name }}]" 
                                                                 class="form-control table-input"
                                                                 data-table-id="{{ $table->id }}"
@@ -487,7 +487,7 @@ Memo builder
                                                         @elseif($column->column_type === 'decimal')
 
                                                             <input 
-                                                                type="number"
+                                                                type="text" inputmode="decimal" data-number-format="grouped"
                                                                 name="tables[{{ $table->id }}][rows][{{ $rowIndex }}][{{ $column->column_name }}]" 
                                                                 class="form-control table-input"
                                                                 data-table-id="{{ $table->id }}"
@@ -829,7 +829,7 @@ Memo builder
 
                                         @foreach($table->columns as $column)
 
-                                            <th>
+                                            <th style="{{ in_array($column->column_type, ['number', 'decimal'], true) ? 'text-align:right' : '' }}">
                                                 {{ $column->column_label }}
                                             </th>
 
@@ -2037,7 +2037,6 @@ Memo builder
         .document-preview .charges-table { margin: 0; font-size: 11px; width: 100%; }
         .document-preview .charges-table th, .document-preview .charges-table td { border: 1px solid #111; padding: 6px; overflow-wrap: anywhere; }
         .document-preview .charges-table th { background: #d0cece; font-weight: 700; }
-        .document-preview .charges-table th:last-child { text-align: center; }
         .document-preview .recommendation { margin: 36px 0 26px; font-size: 11px; line-height: 1.6; }
         .document-preview .signature-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 16px; row-gap: 32px; margin: 0; padding: 0 6px; }
         .document-preview .signature-block { min-width: 0; overflow-wrap: anywhere; }
@@ -2125,8 +2124,18 @@ function updateTablePreview(input) {
         return;
     }
 
-    previewCell.textContent =
-        input.value || '—';
+    const value = input.value.trim();
+    previewCell.textContent = value
+        ? (input.matches('[data-number-format="grouped"]') ? formatGroupedNumber(value) : value)
+        : '—';
+    if (input.matches('[data-number-format="grouped"]')) previewCell.style.textAlign = 'right';
+}
+
+function formatGroupedNumber(value) {
+    const clean = String(value ?? '').replace(/,/g, '').trim();
+    if (!clean || !/^-?\d+(\.\d*)?$/.test(clean)) return value;
+    const [integer, fraction] = clean.split('.');
+    return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (fraction !== undefined ? '.' + fraction : '');
 }
 
 
@@ -2212,7 +2221,9 @@ function updatePreview(fieldId) {
 
     const value = input.value.trim();
 
-    previewElement.textContent = value || '—';
+    previewElement.textContent = value
+        ? (input.matches('[data-number-format="grouped"]') ? formatGroupedNumber(value) : value)
+        : '—';
 }
 
 /* =============================================================
@@ -2279,6 +2290,23 @@ document
 ============================================================= */
 
 calculateTotal();
+
+// Fill the live document preview from the current form values, including saved
+// memo table rows when this page is opened in edit mode.
+document.querySelectorAll('.dynamic-preview-table tbody').forEach(tbody => tbody.replaceChildren());
+document.querySelectorAll('#memoForm input, #memoForm textarea, #memoForm select').forEach(input => {
+    if (input.classList.contains('table-input')) {
+        const table = templateTables.find(item => String(item.id) === String(input.dataset.tableId));
+        const previewTable = document.getElementById('preview-table-' + input.dataset.tableId);
+        const tbody = previewTable?.querySelector('tbody');
+        if (table && tbody && !tbody.querySelector(`tr[data-row="${input.dataset.rowIndex}"]`)) {
+            addPreviewTableRow(input.dataset.tableId, input.dataset.rowIndex, table);
+        }
+        updateTablePreview(input);
+    } else {
+        updatePreview(input.id);
+    }
+});
 
 
 
@@ -2347,7 +2375,7 @@ function addTableRow(tableId) {
 
             inputHtml = `
                 <input
-                    type="number"
+                    type="text" inputmode="numeric" data-number-format="grouped"
                     name="tables[${tableId}][rows][${rowIndex}][${column.name}]"
                     class="form-control table-input"
                     data-table-id="${tableId}"
@@ -2361,7 +2389,7 @@ function addTableRow(tableId) {
 
             inputHtml = `
                 <input
-                    type="number"
+                    type="text" inputmode="decimal" data-number-format="grouped"
                     name="tables[${tableId}][rows][${rowIndex}][${column.name}]"
                     class="form-control table-input"
                     data-table-id="${tableId}"
@@ -2469,8 +2497,11 @@ function updateTablePreview(input) {
         return;
     }
 
-    previewCell.textContent =
-        input.value || '—';
+    const value = input.value.trim();
+    previewCell.textContent = value
+        ? (input.matches('[data-number-format="grouped"]') ? formatGroupedNumber(value) : value)
+        : '—';
+    if (input.matches('[data-number-format="grouped"]')) previewCell.style.textAlign = 'right';
 }
 
 

@@ -5,6 +5,7 @@
     <button type="button" data-cell-format="underline" aria-label="Underline cell" aria-pressed="false"><u>U</u></button>
 </div>
 <style>
+    [data-number-format="grouped"] { text-align:right; }
     .table-format-toolbar { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid #c0dda4; border-radius:12px; background:#fff; color:#24312b; box-shadow:0 8px 30px #0002; }
     .table-format-toolbar[hidden] { display:none; }
     .table-format-toolbar span { font-size:12px; white-space:nowrap; }
@@ -101,8 +102,24 @@ document.addEventListener('DOMContentLoaded', () => {
     enhanceRows();
     const observer = new MutationObserver(enhanceRows);
     document.querySelectorAll('#memoForm, .memo-editor form').forEach(form => {
+        const groupDigits = value => {
+            const clean = String(value ?? '').replace(/,/g, '').trim();
+            if (!clean || !/^-?\d+(\.\d*)?$/.test(clean)) return value;
+            const [integer, fraction] = clean.split('.');
+            return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (fraction !== undefined ? '.' + fraction : '');
+        };
+        form.querySelectorAll('[data-number-format="grouped"]').forEach(input => input.value = groupDigits(input.value));
+        form.addEventListener('focusin', event => {
+            const input = event.target.closest('[data-number-format="grouped"]');
+            if (input) input.value = input.value.replace(/,/g, '');
+        });
+        form.addEventListener('focusout', event => {
+            const input = event.target.closest('[data-number-format="grouped"]');
+            if (input) input.value = groupDigits(input.value);
+        });
         observer.observe(form, {childList:true, subtree:true});
         form.addEventListener('submit', () => {
+            form.querySelectorAll('[data-number-format="grouped"]').forEach(input => input.value = input.value.replace(/,/g, ''));
             form.querySelectorAll('[data-table-format-value]').forEach(input => input.remove());
             const append = (name, value) => {
                 const input = document.createElement('input'); input.type = 'hidden'; input.name = name; input.value = value;

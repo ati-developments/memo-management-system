@@ -32,6 +32,7 @@
     .memo-document .charges { margin: 20pt 0; table-layout: fixed; }
     .memo-document .charges th { background: #d0cece; text-align: left; font-weight: bold; }
     .memo-document .charges td { white-space: pre-line; overflow-wrap: break-word; }
+    .memo-document .charges td[style*="text-align:right"] { white-space: nowrap; }
     .memo-document thead { display: table-header-group; }
     .memo-document tr { page-break-inside: avoid; }
     .memo-document h2 { font-size: 10pt; margin: 18pt 0 0; }

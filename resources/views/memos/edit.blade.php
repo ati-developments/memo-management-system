@@ -75,7 +75,7 @@ Memo builder
                         @if($column->column_type === 'textarea')
                             <textarea aria-label="{{ $column->column_label }}" name="tables[{{ $table->id }}][rows][{{ $index }}][{{ $column->column_name }}]">{{ $row[$column->column_name] ?? '' }}</textarea>
                         @else
-                            <input aria-label="{{ $column->column_label }}" name="tables[{{ $table->id }}][rows][{{ $index }}][{{ $column->column_name }}]" type="{{ $column->column_type === 'decimal' ? 'number' : (in_array($column->column_type, ['number', 'date']) ? $column->column_type : 'text') }}" step="any" value="{{ $row[$column->column_name] ?? '' }}">
+                        <input aria-label="{{ $column->column_label }}" name="tables[{{ $table->id }}][rows][{{ $index }}][{{ $column->column_name }}]" type="{{ in_array($column->column_type, ['number', 'decimal']) ? 'text' : (in_array($column->column_type, ['date']) ? 'date' : 'text') }}" @if(in_array($column->column_type, ['number', 'decimal'])) inputmode="{{ $column->column_type === 'number' ? 'numeric' : 'decimal' }}" data-number-format="grouped" @endif value="{{ $row[$column->column_name] ?? '' }}">
                         @endif
                     @if($loop->last)<button type="button" class="remove-memo-row" data-remove-row aria-label="Remove row" title="Remove row">&times;</button>@endif
                     </td>@endforeach</tr>
