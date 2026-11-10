@@ -31,7 +31,7 @@
     .memo-document .prose { border: 1px solid #111; padding: 6pt; white-space: pre-line; overflow-wrap: break-word; margin: 0; }
     .memo-document .charges { margin: 20pt 0; table-layout: fixed; }
     .memo-document .charges th { background: #d0cece; text-align: left; font-weight: bold; }
-    .memo-document .charges td { white-space: pre-line; overflow-wrap: break-word; }
+    .memo-document .charges td { white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; }
     .memo-document .charges td[style*="text-align:right"] { white-space: nowrap; }
     .memo-document thead { display: table-header-group; }
     .memo-document tr { page-break-inside: avoid; }

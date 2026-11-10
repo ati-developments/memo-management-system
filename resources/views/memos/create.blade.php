@@ -1693,6 +1693,8 @@ Memo builder
 
             width: 100%;
 
+            table-layout: fixed;
+
             border-collapse: collapse;
 
             margin-top: 15px;
@@ -1708,6 +1710,10 @@ Memo builder
             padding: 9px 10px;
 
             border: 1px solid #333333;
+
+            min-width: 0;
+
+            overflow-wrap: anywhere;
 
         }
 
@@ -1875,6 +1881,8 @@ Memo builder
 
             border-collapse: collapse;
 
+            table-layout: fixed;
+
             min-width: 650px;
 
         }
@@ -1911,6 +1919,10 @@ Memo builder
 
             background: #ffffff;
 
+            min-width: 0;
+
+            overflow-wrap: anywhere;
+
         }
 
 
@@ -1918,6 +1930,36 @@ Memo builder
 
             margin: 0;
 
+            box-sizing: border-box;
+
+            width: 100%;
+
+            min-width: 0;
+
+        }
+
+        .memo-form-section table {
+            table-layout: fixed;
+        }
+
+        .memo-form-section th,
+        .memo-form-section td {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .memo-form-section table input,
+        .memo-form-section table textarea {
+            box-sizing: border-box;
+            max-width: 100%;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .memo-entry-table textarea.form-control {
+            max-width: 100%;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
         }
 
 
@@ -2034,8 +2076,8 @@ Memo builder
         .document-preview .memo-prose-row .memo-value { min-height: 34px; border: 1px solid #111; margin-top: -1px; }
         .document-preview .preview-table-section { overflow-x: auto; margin: 26px 0; }
         .document-preview .document-section-title { font-size: 12px; margin-bottom: 8px; }
-        .document-preview .charges-table { margin: 0; font-size: 11px; width: 100%; }
-        .document-preview .charges-table th, .document-preview .charges-table td { border: 1px solid #111; padding: 6px; overflow-wrap: anywhere; }
+        .document-preview .charges-table { margin: 0; font-size: 11px; width: 100%; table-layout: fixed; }
+        .document-preview .charges-table th, .document-preview .charges-table td { border: 1px solid #111; padding: 6px; min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
         .document-preview .charges-table th { background: #d0cece; font-weight: 700; }
         .document-preview .recommendation { margin: 36px 0 26px; font-size: 11px; line-height: 1.6; }
         .document-preview .signature-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 16px; row-gap: 32px; margin: 0; padding: 0 6px; }

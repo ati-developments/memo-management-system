@@ -5,10 +5,10 @@
     .memo-editor { max-width: 950px; margin: 24px auto; }
     .memo-editor form { padding: 28px; background: white; border: 1px solid #ddd; border-radius: 10px; }
     .memo-editor label { display: block; margin: 16px 0 6px; font-size: 13px; font-weight: 600; }
-    .memo-editor input, .memo-editor textarea, .memo-editor select { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font: inherit; }
-    .memo-editor textarea { min-height: 120px; }
-    .memo-editor table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-    .memo-editor th, .memo-editor td { padding: 6px; text-align: left; }
+    .memo-editor input, .memo-editor textarea, .memo-editor select { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font: inherit; }
+    .memo-editor textarea { min-height: 120px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .memo-editor table { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 16px 0; }
+    .memo-editor th, .memo-editor td { padding: 6px; text-align: left; overflow-wrap: anywhere; min-width: 0; }
     .memo-editor button { padding: 10px 16px; border: 1px solid #ccd3df; border-radius: 6px; cursor: pointer; }
     .memo-editor .primary { background: #2856a8; color: white; }
     .memo-editor .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
