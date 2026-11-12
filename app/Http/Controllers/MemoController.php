@@ -160,6 +160,45 @@ class MemoController extends Controller
             }
         }
         $request->validate($rules);
+        $numericErrors = [];
+        foreach ($template->tables as $table) {
+            foreach ($table->columns as $column) {
+                if (!in_array($column->column_type, ['number', 'decimal'], true)) continue;
+                foreach ($request->input("tables.{$table->id}.rows", []) as $rowIndex => $row) {
+                    $value = trim((string) ($row[$column->column_name] ?? ''));
+                    if ($value === '') continue;
+                    $value = str_replace(',', '', $value);
+                    $pattern = $column->column_type === 'number' ? '/^-?\d+$/' : '/^-?(?:\d+(?:\.\d*)?|\.\d+)$/';
+                    if (!preg_match($pattern, $value)) {
+                        $numericErrors["tables.{$table->id}.rows.{$rowIndex}.{$column->column_name}"] = "{$column->column_label} must contain only " . ($column->column_type === 'number' ? 'whole numbers.' : 'numbers and a decimal point.');
+                    }
+                }
+            }
+        }
+        foreach ($request->input('inserted_items', []) as $itemIndex => $item) {
+            if (($item['kind'] ?? null) !== 'table') {
+                if (($item['type'] ?? null) === 'number' && filled($item['value'] ?? null) && !preg_match('/^-?\d+$/', trim((string) $item['value']))) {
+                    $numericErrors["inserted_items.{$itemIndex}.value"] = 'This field must contain only whole numbers.';
+                }
+                continue;
+            }
+            foreach ($item['columns'] ?? [] as $column) {
+                $type = $column['column_type'] ?? '';
+                if (!in_array($type, ['number', 'decimal'], true)) continue;
+                foreach ($item['rows'] ?? [] as $rowIndex => $row) {
+                    $value = trim((string) ($row[$column['column_name']] ?? ''));
+                    if ($value === '') continue;
+                    $value = str_replace(',', '', $value);
+                    $pattern = $type === 'number' ? '/^-?\d+$/' : '/^-?(?:\d+(?:\.\d*)?|\.\d+)$/';
+                    if (!preg_match($pattern, $value)) {
+                        $numericErrors["inserted_items.{$itemIndex}.rows.{$rowIndex}.{$column['column_name']}"] = "{$column['column_label']} must contain only " . ($type === 'number' ? 'whole numbers.' : 'numbers and a decimal point.');
+                    }
+                }
+            }
+        }
+        if ($numericErrors) {
+            throw \Illuminate\Validation\ValidationException::withMessages($numericErrors);
+        }
         $creationType = $request->input('creation_type', $editingMemo?->creation_type ?? 'template');
         if ($creationType === 'freeform' && $request->input('action') === 'submit'
             && trim(html_entity_decode(strip_tags(\App\Support\MemoTextFormatting::sanitize($request->input('content') ?: '<p></p>')))) === '') {

@@ -69,6 +69,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const key = {b:'bold', i:'italic', u:'underline'}[event.key.toLowerCase()];
         if (key) { event.preventDefault(); toggle(key); }
     });
+    document.addEventListener('input', event => {
+        const input = event.target.closest('[data-number-format="grouped"]');
+        if (!input) return;
+        const decimal = input.inputMode === 'decimal';
+        let value = input.value.replace(/,/g, '').replace(decimal ? /[^0-9.-]/g : /[^0-9-]/g, '');
+        value = value.startsWith('-') ? '-' + value.slice(1).replace(/-/g, '') : value.replace(/-/g, '');
+        if (decimal) {
+            const point = value.indexOf('.');
+            if (point !== -1) value = value.slice(0, point + 1) + value.slice(point + 1).replace(/\./g, '');
+        }
+        if (input.value !== value) input.value = value;
+    });
     const enhanceRows = () => {
         document.querySelectorAll(selector).forEach(paint);
         document.querySelectorAll('#memoForm table').forEach(table => {
