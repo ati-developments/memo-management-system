@@ -1,6 +1,6 @@
 <table style="margin-bottom:18pt; width:100%;"><tr>
     <td style="vertical-align:top;"><h1 style="font-size:20pt; color:#111; margin:0 0 12pt;">Memo : &nbsp; {{ $memo->department?->department_name }}</h1></td>
-    <td style="width:150pt; text-align:right; vertical-align:top;">@if($brandImage ?? null)<img src="{{ $brandImage }}" alt="Amana Takaful Insurance" style="width:140pt; height:auto;">@endif</td>
+    <td style="width:150pt; text-align:right; vertical-align:top;">@if($brandImage ?? null)<img src="{{ $brandImage }}" alt="Amana Takaful Insurance" style="width:140pt; height:auto; margin-top:-8pt;">@endif</td>
 </tr></table>
 <table style="margin-bottom:18pt; font-size:9pt;">
     @foreach(['To' => $values->get('to'), 'From' => $values->get('from') ?: $memo->creator?->name, 'Through' => $values->get('through'), 'Subject' => $memo->subject, 'Date' => $values->get('date') ?: $memo->created_at?->format('Y-m-d')] as $label => $value)

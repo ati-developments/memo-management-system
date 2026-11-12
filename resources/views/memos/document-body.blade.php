@@ -27,7 +27,7 @@
     <table class="charges"><thead><tr>@foreach($columns as $key => $label)@php $columnType = $table?->columns->firstWhere('column_name', $key)?->column_type; @endphp<th style="{{ in_array($columnType, ['number', 'decimal'], true) ? 'text-align:right' : '' }}">{{ $label }}</th>@endforeach</tr></thead>
         <tbody>@foreach($rows as $row)<tr>@foreach($columns as $key => $label)
             @php $columnType = $table?->columns->firstWhere('column_name', $key)?->column_type; $cellValue = $row->row_data[$key] ?? '—'; @endphp
-            <td style="{{ $memo->tableCellStyle('tables['.$tableId.'][rows]['.$row->row_order.']['.$key.']') }}{{ in_array($columnType, ['number', 'decimal'], true) ? ';text-align:right' : '' }}">{{ in_array($columnType, ['number', 'decimal'], true) && is_numeric(str_replace(',', '', (string) $cellValue)) ? number_format((float) str_replace(',', '', (string) $cellValue), $columnType === 'number' ? 0 : 2, '.', ',') : $cellValue }}</td>
+            <td @class(['numeric' => in_array($columnType, ['number', 'decimal'], true)]) style="{{ $memo->tableCellStyle('tables['.$tableId.'][rows]['.$row->row_order.']['.$key.']') }}{{ in_array($columnType, ['number', 'decimal'], true) ? ';text-align:right' : '' }}">{{ in_array($columnType, ['number', 'decimal'], true) && is_numeric(str_replace(',', '', (string) $cellValue)) ? number_format((float) str_replace(',', '', (string) $cellValue), $columnType === 'number' ? 0 : 2, '.', ',') : $cellValue }}</td>
         @endforeach</tr>@endforeach</tbody>
     </table>
 @endforeach

@@ -11,7 +11,7 @@
     .memo-document .department { margin-top: 5pt; font-size: 11pt; font-weight: bold; color: #808080; }
     .memo-document .brand { text-align: right; color: #626e79; font-size: 22pt; font-weight: bold; }
     .memo-document .brand small { display: block; font-size: 7pt; }
-    .memo-document .brand img { width: 140pt; height: auto; }
+    .memo-document .brand img { width: 140pt; height: auto; margin-top: -8pt; }
     .memo-document .reference { font-size: 7pt; color: #666; margin: 0 0 12pt; }
     .memo-document .metadata td { width: 48%; vertical-align: top; }
     .memo-document .metadata .gap { width: 4%; }
@@ -32,6 +32,7 @@
     .memo-document .charges { margin: 20pt 0; table-layout: fixed; }
     .memo-document .charges th { background: #d0cece; text-align: left; font-weight: bold; }
     .memo-document .charges td { white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; }
+    .memo-document .charges td.numeric { text-align: right !important; }
     .memo-document .charges td[style*="text-align:right"] { white-space: nowrap; }
     .memo-document thead { display: table-header-group; }
     .memo-document tr { page-break-inside: avoid; }
