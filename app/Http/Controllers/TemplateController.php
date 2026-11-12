@@ -182,12 +182,10 @@ class TemplateController extends Controller
                 'nullable',
                 'boolean',
             ],
-            'allow_optional_text' => ['required', 'boolean'],
         ]);
 
         $validated['fields'] = $this->withNames($validated['fields'] ?? [], 'field_name', 'field_label', 'field');
         DB::transaction(function () use ($template, $validated) {
-            $template->update(['allow_optional_text' => $validated['allow_optional_text']]);
             $kept = [];
 
             // Create the new fields

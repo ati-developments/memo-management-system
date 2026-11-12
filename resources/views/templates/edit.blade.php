@@ -19,7 +19,7 @@
 Template builder
 @endsection
 @section('header-back')
-<x-back-link :fallback="route('templates.index')" />
+<a href="{{ route('memos.create.template', $template) }}">&larr; Back</a>
 @endsection
 
 <div class="editor-body">
